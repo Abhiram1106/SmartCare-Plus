@@ -239,6 +239,7 @@ PUT    /api/chat/mark-all-read/:userId
 GET    /api/chat/conversations
 
 Socket.io Events:
+
 - user:register (user registration)
 - chat:message (send message)
 - chat:newMessage (receive message)  
@@ -300,6 +301,7 @@ View/change passkey: Profile → Payment Security
 Recent Major Enhancements (November 5, 2025):
 
 ✓ **Real-Time Communication System**
+
 - Patient-Doctor secure messaging with appointment-based access control
 - Socket.io integration with real-time messaging, typing indicators, online status
 - Cross-account messaging consistency with room management
@@ -307,6 +309,7 @@ Recent Major Enhancements (November 5, 2025):
 - Comprehensive chat components for both patients and doctors
 
 ✓ **Comprehensive Rating & Review System**
+
 - All 151 doctors now have 3-8 realistic reviews with 4-5 star ratings
 - Medical-specific feedback content with authentic patient experiences
 - Rating system integrated into allInOneSeeder.js and allInOneMigrator.js
@@ -314,6 +317,7 @@ Recent Major Enhancements (November 5, 2025):
 - Proper rating aggregation and statistics
 
 ✓ **Performance Optimization Framework**
+
 - React.memo optimization for ChatWithDoctor and DoctorChat components
 - useCallback memoization for all functions to prevent unnecessary re-renders
 - useMemo for expensive computations (message sorting, patient lists)
@@ -323,31 +327,31 @@ Recent Major Enhancements (November 5, 2025):
 Previous Enhancements (November 4, 2025):
 ✓ Payment Security System
 
-* Unique passkeys for all 157 users
-* Password-protected passkey management
-* View/change passkey from profile
-* Real passkey validation (no demo)
+- Unique passkeys for all 157 users
+- Password-protected passkey management
+- View/change passkey from profile
+- Real passkey validation (no demo)
 
 ✓ Payment Gateway Improvements
 
-* Removed all demo warnings
-* Professional multi-step payment UI
-* User-specific passkey validation
-* Complete payment history
+- Removed all demo warnings
+- Professional multi-step payment UI
+- User-specific passkey validation
+- Complete payment history
 
 ✓ Bug Fixes
 
-* Fixed consultation fee display
-* Fixed "appointment not found" error
-* Fixed white screen in book appointment
-* Updated appointment population
+- Fixed consultation fee display
+- Fixed "appointment not found" error
+- Fixed white screen in book appointment
+- Updated appointment population
 
 ✓ Documentation
 
-* Complete implementation guides
-* Testing procedures
-* User passkeys logged
-* API documentation updated
+- Complete implementation guides
+- Testing procedures
+- User passkeys logged
+- API documentation updated
 
 ## 📚 DOCUMENTATION FILES
 
@@ -390,21 +394,21 @@ Real-Time Features: Complete chat system with appointment security
 
 Backend:
 
-* Node.js + Express.js
-* MongoDB + Mongoose
-* JWT Authentication
-* bcrypt (password hashing)
-* Socket.io (real-time)
+- Node.js + Express.js
+- MongoDB + Mongoose
+- JWT Authentication
+- bcrypt (password hashing)
+- Socket.io (real-time)
 
 Frontend:
 
-* React.js
-* React Router v6
-* Context API
-* TailwindCSS
-* Axios
-* Socket.io-client
-* TensorFlow.js (for AI features)
+- React.js
+- React Router v6
+- Context API
+- TailwindCSS
+- Axios
+- Socket.io-client
+- TensorFlow.js (for AI features)
 
 ## 📞 SUPPORT RESOURCES
 

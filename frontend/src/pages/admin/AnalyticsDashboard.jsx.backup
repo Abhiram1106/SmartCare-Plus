@@ -1,0 +1,306 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
+import RevenueChart from '../../components/analytics/RevenueChart';
+import AppointmentTrendsChart from '../../components/analytics/AppointmentTrendsChart';
+import PeakHoursHeatmap from '../../components/analytics/PeakHoursHeatmap';
+import DoctorLeaderboard from '../../components/analytics/DoctorLeaderboard';
+import PaymentAnalytics from '../../components/analytics/PaymentAnalytics';
+import ComparisonChart from '../../components/analytics/ComparisonChart';
+
+const AnalyticsDashboard = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const isDoctor = user?.role === 'doctor';
+  
+  const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [period, setPeriod] = useState('monthly');
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0]
+  });
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  // Data states
+  const [revenueData, setRevenueData] = useState({ data: [], totalRevenue: 0 });
+  const [appointmentData, setAppointmentData] = useState({ trends: [], statusBreakdown: [] });
+  const [peakHoursData, setPeakHoursData] = useState({ heatmapData: [], dayNames: [] });
+  const [doctorPerformance, setDoctorPerformance] = useState({ leaderboard: [], aggregateStats: {} });
+  const [paymentData, setPaymentData] = useState({
+    statusBreakdown: [],
+    methodBreakdown: [],
+    dailyTrend: [],
+    successRate: 0
+  });
+  const [comparisonData, setComparisonData] = useState({ monthly: null, quarterly: null });
+
+  useEffect(() => {
+    fetchAllAnalytics();
+  }, [period, dateRange]);
+
+  const fetchAllAnalytics = async () => {
+    try {
+      setLoading(true);
+      const { startDate, endDate } = dateRange;
+
+      const requests = [
+        api.get(`/analytics/appointments?period=${period}&startDate=${startDate}&endDate=${endDate}`),
+        api.get(`/analytics/peak-hours`)
+      ];
+
+      if (isAdmin) {
+        requests.push(
+          api.get(`/analytics/revenue?period=${period}&startDate=${startDate}&endDate=${endDate}`),
+          api.get(`/analytics/doctor-performance?startDate=${startDate}&endDate=${endDate}&limit=10`),
+          api.get(`/analytics/payment-success-rate?startDate=${startDate}&endDate=${endDate}`),
+          api.get(`/analytics/comparison`)
+        );
+      }
+
+      const responses = await Promise.all(requests);
+      
+      setAppointmentData(responses[0].data);
+      setPeakHoursData(responses[1].data);
+
+      if (isAdmin) {
+        setRevenueData(responses[2].data);
+        setDoctorPerformance(responses[3].data);
+        setPaymentData(responses[4].data);
+        setComparisonData(responses[5].data);
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: '📊' },
+    ...(isAdmin ? [{ id: 'revenue', label: 'Revenue', icon: '💰' }] : []),
+    { id: 'appointments', label: 'Appointments', icon: '📅' },
+    { id: 'peak-hours', label: 'Peak Hours', icon: '🕐' },
+    ...(isAdmin ? [
+      { id: 'performance', label: 'Doctor Performance', icon: '🏆' },
+      { id: 'payments', label: 'Payments', icon: '💳' },
+      { id: 'comparison', label: 'Comparison', icon: '📈' }
+    ] : [])
+  ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading analytics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">📊 Advanced Analytics Dashboard</h1>
+          <p className="text-gray-600 mt-2">Comprehensive insights and performance metrics</p>
+        </div>
+
+        {/* Controls */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Period</label>
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+              <input
+                type="date"
+                value={dateRange.startDate}
+                onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+              <input
+                type="date"
+                value={dateRange.endDate}
+                onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+          <button
+            onClick={fetchAllAnalytics}
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Refresh Data
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white rounded-lg shadow-md mb-6">
+          <div className="flex overflow-x-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 min-w-max px-6 py-4 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-blue-600 text-white border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-6">
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {isAdmin && (
+                  <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md p-6 text-white">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-green-100 text-sm">Total Revenue</p>
+                        <p className="text-4xl font-bold mt-2">₹{revenueData.totalRevenue.toLocaleString()}</p>
+                      </div>
+                      <svg className="w-12 h-12 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-100 text-sm">Total Appointments</p>
+                      <p className="text-4xl font-bold mt-2">
+                        {appointmentData.trends.reduce((sum, t) => sum + t.total, 0)}
+                      </p>
+                    </div>
+                    <svg className="w-12 h-12 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-100 text-sm">Completed</p>
+                      <p className="text-4xl font-bold mt-2">
+                        {appointmentData.trends.reduce((sum, t) => sum + t.completed, 0)}
+                      </p>
+                    </div>
+                    <svg className="w-12 h-12 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                {isAdmin && paymentData.successRate && (
+                  <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-6 text-white">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-orange-100 text-sm">Payment Success Rate</p>
+                        <p className="text-4xl font-bold mt-2">{paymentData.successRate}%</p>
+                      </div>
+                      <svg className="w-12 h-12 text-orange-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {isAdmin && <DoctorLeaderboard leaderboard={doctorPerformance.leaderboard} loading={false} />}
+              <AppointmentTrendsChart data={appointmentData.trends} period={period} />
+            </div>
+          )}
+
+          {/* Revenue Tab */}
+          {activeTab === 'revenue' && isAdmin && (
+            <RevenueChart data={revenueData.data} period={period} />
+          )}
+
+          {/* Appointments Tab */}
+          {activeTab === 'appointments' && (
+            <AppointmentTrendsChart data={appointmentData.trends} period={period} />
+          )}
+
+          {/* Peak Hours Tab */}
+          {activeTab === 'peak-hours' && (
+            <PeakHoursHeatmap 
+              heatmapData={peakHoursData.heatmapData} 
+              dayNames={peakHoursData.dayNames} 
+            />
+          )}
+
+          {/* Performance Tab */}
+          {activeTab === 'performance' && isAdmin && (
+            <div className="space-y-6">
+              <DoctorLeaderboard leaderboard={doctorPerformance.leaderboard} loading={false} />
+              
+              {/* Aggregate Stats */}
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Aggregate Statistics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-600 font-medium">Total Doctors</p>
+                    <p className="text-3xl font-bold text-blue-700">{doctorPerformance.aggregateStats.totalDoctors}</p>
+                  </div>
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <p className="text-sm text-green-600 font-medium">Avg Completion Rate</p>
+                    <p className="text-3xl font-bold text-green-700">{doctorPerformance.aggregateStats.averageCompletionRate}%</p>
+                  </div>
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <p className="text-sm text-purple-600 font-medium">Total Revenue</p>
+                    <p className="text-3xl font-bold text-purple-700">₹{doctorPerformance.aggregateStats.totalRevenue?.toLocaleString()}</p>
+                  </div>
+                  <div className="p-4 bg-red-50 rounded-lg">
+                    <p className="text-sm text-red-600 font-medium">Avg Cancellation Rate</p>
+                    <p className="text-3xl font-bold text-red-700">{doctorPerformance.aggregateStats.averageCancellationRate}%</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Payments Tab */}
+          {activeTab === 'payments' && isAdmin && (
+            <PaymentAnalytics {...paymentData} />
+          )}
+
+          {/* Comparison Tab */}
+          {activeTab === 'comparison' && isAdmin && (
+            <ComparisonChart 
+              monthlyData={comparisonData.monthly} 
+              quarterlyData={comparisonData.quarterly} 
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AnalyticsDashboard;

@@ -51,6 +51,7 @@ app.use('/api/intents', require('./routes/intent'));
 app.use('/api/chatlogs', require('./routes/chatlog'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/analytics', require('./routes/analytics'));
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

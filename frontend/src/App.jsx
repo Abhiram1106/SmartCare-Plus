@@ -38,6 +38,7 @@ const ManageAppointments = lazy(() => import('./pages/admin/ManageAppointments')
 const ManageIntents = lazy(() => import('./pages/admin/ManageIntents'));
 const ChatLogs = lazy(() => import('./pages/admin/ChatLogs'));
 const AdminProfile = lazy(() => import('./pages/admin/AdminProfile'));
+const AnalyticsDashboard = lazy(() => import('./pages/admin/AnalyticsDashboard'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -227,6 +228,14 @@ export default function App() {
               element={
                 <PrivateRoute roles={['admin']}>
                   <AdminProfile />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics"
+              element={
+                <PrivateRoute roles={['admin']}>
+                  <AnalyticsDashboard />
                 </PrivateRoute>
               }
             />
