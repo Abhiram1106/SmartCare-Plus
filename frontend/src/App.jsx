@@ -1,41 +1,53 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 
-// Components
+// Components (not lazy loaded as they're used on every page)
 import Navbar from './components/Navbar';
 import PrivateRoute from './components/PrivateRoute';
 import FloatingChatButton from './components/FloatingChatButton';
 
-// Public Pages
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Chatbot from './pages/Chatbot';
-import EnhancedChatbot from './pages/EnhancedChatbot';
+// Lazy load pages for better performance
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Chatbot = lazy(() => import('./pages/Chatbot'));
+const EnhancedChatbot = lazy(() => import('./pages/EnhancedChatbot'));
 
 // Patient Pages
-import PatientDashboard from './pages/patient/PatientDashboard';
-import Doctors from './pages/patient/Doctors';
-import BookAppointment from './pages/patient/BookAppointment';
-import MyAppointments from './pages/patient/MyAppointments';
-import MyPayments from './pages/patient/MyPayments';
-import PatientProfile from './pages/patient/PatientProfile';
-import PaymentGateway from './pages/patient/PaymentGateway';
+const PatientDashboard = lazy(() => import('./pages/patient/PatientDashboard'));
+const Doctors = lazy(() => import('./pages/patient/Doctors'));
+const BookAppointment = lazy(() => import('./pages/patient/BookAppointment'));
+const MyAppointments = lazy(() => import('./pages/patient/MyAppointments'));
+const MyPayments = lazy(() => import('./pages/patient/MyPayments'));
+const PatientProfile = lazy(() => import('./pages/patient/PatientProfile'));
+const PaymentGateway = lazy(() => import('./pages/patient/PaymentGateway'));
+const ChatWithDoctor = lazy(() => import('./pages/patient/ChatWithDoctor'));
 
 // Doctor Pages
-import DoctorDashboard from './pages/doctor/DoctorDashboard';
-import DoctorAppointments from './pages/doctor/DoctorAppointments';
-import PatientHistory from './pages/doctor/PatientHistory';
-import DoctorProfile from './pages/doctor/DoctorProfile';
+const DoctorDashboard = lazy(() => import('./pages/doctor/DoctorDashboard'));
+const DoctorAppointments = lazy(() => import('./pages/doctor/DoctorAppointments'));
+const PatientHistory = lazy(() => import('./pages/doctor/PatientHistory'));
+const DoctorProfile = lazy(() => import('./pages/doctor/DoctorProfile'));
+const DoctorChat = lazy(() => import('./pages/doctor/DoctorChat'));
 
 // Admin Pages
-import AdminDashboard from './pages/admin/AdminDashboard';
-import ManageUsers from './pages/admin/ManageUsers';
-import ManageAppointments from './pages/admin/ManageAppointments';
-import ManageIntents from './pages/admin/ManageIntents';
-import ChatLogs from './pages/admin/ChatLogs';
-import AdminProfile from './pages/admin/AdminProfile';
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const ManageUsers = lazy(() => import('./pages/admin/ManageUsers'));
+const ManageAppointments = lazy(() => import('./pages/admin/ManageAppointments'));
+const ManageIntents = lazy(() => import('./pages/admin/ManageIntents'));
+const ChatLogs = lazy(() => import('./pages/admin/ChatLogs'));
+const AdminProfile = lazy(() => import('./pages/admin/AdminProfile'));
+
+// Loading component
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
+      <p className="mt-4 text-gray-600 font-medium">Loading...</p>
+    </div>
+  </div>
+);
 
 export default function App() {
   return (
@@ -43,8 +55,9 @@ export default function App() {
       <BrowserRouter>
         <Navbar />
         <FloatingChatButton />
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
+        <Suspense fallback={<LoadingFallback />}>
+          <div className="min-h-screen bg-gray-50">
+            <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -63,6 +76,14 @@ export default function App() {
             />
             <Route
               path="/patient/doctors"
+              element={
+                <PrivateRoute roles={['patient']}>
+                  <Doctors />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/patient/book-appointment"
               element={
                 <PrivateRoute roles={['patient']}>
                   <Doctors />
@@ -109,6 +130,14 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/patient/chat"
+              element={
+                <PrivateRoute roles={['patient']}>
+                  <ChatWithDoctor />
+                </PrivateRoute>
+              }
+            />
 
             {/* Doctor Routes */}
             <Route
@@ -140,6 +169,14 @@ export default function App() {
               element={
                 <PrivateRoute roles={['doctor']}>
                   <DoctorProfile />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/doctor/chat"
+              element={
+                <PrivateRoute roles={['doctor']}>
+                  <DoctorChat />
                 </PrivateRoute>
               }
             />
@@ -194,7 +231,8 @@ export default function App() {
               }
             />
           </Routes>
-        </div>
+          </div>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   );

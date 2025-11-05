@@ -147,7 +147,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
           <Link
             to="/admin/users"
             className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
@@ -192,6 +192,94 @@ const AdminDashboard = () => {
               </svg>
             </div>
           </Link>
+
+          <button
+            onClick={async () => {
+              try {
+                const response = await api.get('/payments');
+                const payments = response.data || [];
+                const paymentHistory = payments.map(p => ({
+                  id: p._id,
+                  patient: p.patient?.name || 'N/A',
+                  doctor: p.doctor?.name || 'N/A',
+                  amount: p.amount || 0,
+                  status: p.status,
+                  date: new Date(p.createdAt).toLocaleDateString(),
+                  method: p.paymentMethod || 'Card'
+                }));
+                
+                // Create modal to show payment history
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                modal.innerHTML = `
+                  <div class="bg-white rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
+                      <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Payment History & Revenue</h2>
+                        <p class="text-gray-600 mt-1">Total Revenue: ₹${stats.totalRevenue || 0} | Total Payments: ${stats.totalPayments || 0}</p>
+                      </div>
+                      <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                      </button>
+                    </div>
+                    <div class="p-6">
+                      <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                          <thead class="bg-gray-50">
+                            <tr>
+                              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
+                              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody class="bg-white divide-y divide-gray-200">
+                            ${paymentHistory.map(payment => `
+                              <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${payment.date}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${payment.patient}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${payment.doctor}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">₹${payment.amount}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${payment.method}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                  <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                    payment.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                                    payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                    'bg-red-100 text-red-800'
+                                  }">
+                                    ${payment.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            `).join('')}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                `;
+                document.body.appendChild(modal);
+              } catch (error) {
+                console.error('Error fetching payments:', error);
+                alert('Failed to fetch payment history');
+              }
+            }}
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow text-left"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">Manage Revenue</h3>
+                <p className="text-gray-600 mt-1">₹{stats.totalRevenue || 0} total revenue</p>
+              </div>
+              <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
         </div>
 
         {pendingDoctors.length > 0 && (

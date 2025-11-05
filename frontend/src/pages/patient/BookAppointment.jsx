@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 
 const BookAppointment = () => {
   const { doctorId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [doctor, setDoctor] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [formData, setFormData] = useState({
@@ -20,6 +22,11 @@ const BookAppointment = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (!doctorId) {
+      setError('Doctor ID is required. Please select a doctor first.');
+      setLoading(false);
+      return;
+    }
     fetchDoctor();
   }, [doctorId]);
 
@@ -85,10 +92,35 @@ const BookAppointment = () => {
     }
   };
 
+  // Early return if user is not authenticated
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (user.role !== 'patient') {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
+          Access denied. This page is only available to patients.
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading doctor information...</p>
+        </div>
       </div>
     );
   }
@@ -96,8 +128,28 @@ const BookAppointment = () => {
   if (error && !doctor) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+        <div className="bg-red-50 border border-red-400 text-red-700 px-6 py-4 rounded-lg">
+          <div className="flex items-center mb-3">
+            <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 className="text-lg font-semibold">Unable to Load Appointment Page</h3>
+          </div>
+          <p className="text-red-600 mb-4">{error}</p>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => navigate('/patient/doctors')}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Browse Doctors
+            </button>
+            <button 
+              onClick={() => window.history.back()}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
         </div>
       </div>
     );

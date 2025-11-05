@@ -124,13 +124,21 @@ const PatientDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Link
           to="/patient/doctors"
           className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6 hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105"
         >
           <h3 className="text-xl font-bold mb-2">Find Doctors</h3>
           <p className="text-blue-100">Browse and book appointments with qualified doctors</p>
+        </Link>
+
+        <Link
+          to="/patient/chat"
+          className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg shadow-lg p-6 hover:from-cyan-600 hover:to-cyan-700 transition-all transform hover:scale-105"
+        >
+          <h3 className="text-xl font-bold mb-2">Chat with Doctor</h3>
+          <p className="text-cyan-100">Message your doctors instantly</p>
         </Link>
 
         <Link

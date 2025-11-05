@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import ChangePasswordForm from '../../components/ChangePasswordForm';
 
 const PatientProfile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState({
     totalAppointments: 0,
@@ -431,6 +434,23 @@ const PatientProfile = () => {
               </div>
             </div>
 
+            {/* Change Password Section */}
+            <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+              <div className="flex items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                    <svg className="w-7 h-7 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                    Change Password
+                  </h2>
+                  <p className="text-gray-600 mt-2 ml-10">Update your account password for security</p>
+                </div>
+              </div>
+
+              <ChangePasswordForm />
+            </div>
+
             {/* Health Summary */}
             <div className="bg-white rounded-lg shadow-md p-6 mt-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Health Summary</h2>
@@ -534,13 +554,22 @@ const PatientProfile = () => {
             <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg shadow-md p-6 text-white">
               <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <button className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all">
+                <button 
+                  onClick={() => navigate('/patient/doctors')}
+                  className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all font-medium"
+                >
                   Book Appointment
                 </button>
-                <button className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all">
+                <button 
+                  onClick={() => navigate('/patient/appointments')}
+                  className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all font-medium"
+                >
                   View Medical Records
                 </button>
-                <button className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all">
+                <button 
+                  onClick={() => navigate('/patient/payments')}
+                  className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all font-medium"
+                >
                   Payment History
                 </button>
               </div>

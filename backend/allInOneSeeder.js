@@ -212,18 +212,67 @@ const seedAdmins = async () => {
   return { created, skipped };
 };
 
-// 2. SEED DOCTORS
+// 2. SEED DOCTORS (with auto-update for existing)
 const seedDoctors = async (doctorsData) => {
   console.log('\n👨‍⚕️ SEEDING DOCTORS...');
   console.log('─'.repeat(70));
 
-  let created = 0, skipped = 0;
+  let created = 0, skipped = 0, updated = 0;
 
   for (const doctorData of doctorsData) {
     const email = doctorData.contact.replace('..', '.');
-    const existing = await User.findOne({ email });
+    const existingUser = await User.findOne({ email });
     
-    if (existing) {
+    // If user exists, update their doctor profile with ratings if needed
+    if (existingUser && existingUser.role === 'doctor') {
+      const existingDoctor = await Doctor.findOne({ user: existingUser._id });
+      
+      if (existingDoctor) {
+        // Check if doctor needs rating update (if rating is 0 or no breakdown)
+        const needsUpdate = !existingDoctor.rating || 
+                           existingDoctor.rating === 0 || 
+                           !existingDoctor.ratingBreakdown || 
+                           Object.values(existingDoctor.ratingBreakdown).every(v => v === 0);
+        
+        if (needsUpdate) {
+          // Calculate updated stats
+          const experience = existingDoctor.experience || doctorData.experience;
+          const consultationsPerYear = Math.floor(Math.random() * 150) + 100;
+          const totalConsultations = Math.floor(consultationsPerYear * Math.min(experience, 20));
+          const totalPatients = Math.floor(totalConsultations * (0.7 + Math.random() * 0.2));
+          const ratingPercentage = 0.3 + (Math.min(experience, 20) / 20) * 0.2;
+          const totalRatings = Math.floor(totalPatients * ratingPercentage);
+          
+          let avgRating = doctorData.rating || (4.0 + Math.random() * 1.0);
+          avgRating = parseFloat(avgRating.toFixed(1));
+          
+          const baseSuccessRate = 85;
+          const successRate = Math.min(98, baseSuccessRate + (experience * 0.5));
+          const ratingBreakdown = generateRatingBreakdown(avgRating, totalRatings);
+          
+          // Update doctor profile
+          existingDoctor.rating = avgRating;
+          existingDoctor.totalConsultations = totalConsultations;
+          existingDoctor.totalPatients = totalPatients;
+          existingDoctor.successRate = parseFloat(successRate.toFixed(1));
+          existingDoctor.ratingBreakdown = ratingBreakdown;
+          existingDoctor.verifiedBadge = true;
+          
+          await existingDoctor.save();
+          updated++;
+          
+          if (updated <= 3) {
+            console.log(`🔄 Updated: ${doctorData.name}`);
+            console.log(`   Rating: ${avgRating}⭐ (${totalRatings} reviews) | Experience: ${experience} years`);
+          }
+        } else {
+          skipped++;
+        }
+        continue;
+      }
+    }
+    
+    if (existingUser) {
       skipped++;
       continue;
     }
@@ -252,17 +301,38 @@ const seedDoctors = async (doctorsData) => {
       isApproved: true
     });
 
-    // Create Doctor profile
+    // Create Doctor profile with comprehensive ratings
     const experience = doctorData.experience;
+    
+    // Calculate success rate based on experience
     const baseSuccessRate = 85;
     const successRate = Math.min(98, baseSuccessRate + (experience * 0.5));
     
+    // Calculate total consultations based on experience (100-250 per year)
     const consultationsPerYear = Math.floor(Math.random() * 150) + 100;
     const totalConsultations = Math.floor(consultationsPerYear * Math.min(experience, 20));
+    
+    // Calculate total patients (70-90% of consultations are unique patients)
     const totalPatients = Math.floor(totalConsultations * (0.7 + Math.random() * 0.2));
     
-    const totalRatings = Math.floor(totalPatients * 0.3);
-    const avgRating = doctorData.rating;
+    // Calculate rating statistics (30-50% of patients leave reviews, more for experienced doctors)
+    const ratingPercentage = 0.3 + (Math.min(experience, 20) / 20) * 0.2;
+    const totalRatings = Math.floor(totalPatients * ratingPercentage);
+    
+    // Generate realistic rating based on experience
+    let avgRating;
+    if (doctorData.rating && doctorData.rating > 0) {
+      avgRating = doctorData.rating; // Use dataset rating if present
+    } else {
+      // Generate rating: more experience = higher rating (4.0-5.0 range)
+      const baseRating = 4.0;
+      const experienceBonus = Math.min(experience / 20, 1) * 0.5; // Max 0.5 bonus
+      const randomVariation = Math.random() * 0.5; // 0-0.5 variation
+      avgRating = Math.min(5.0, baseRating + experienceBonus + randomVariation);
+    }
+    avgRating = parseFloat(avgRating.toFixed(1));
+    
+    // Generate realistic rating breakdown
     const ratingBreakdown = generateRatingBreakdown(avgRating, totalRatings);
     
     const indianLanguages = ['Hindi', 'Tamil', 'Telugu', 'Marathi', 'Bengali', 'Kannada', 'Malayalam'];
@@ -298,15 +368,21 @@ const seedDoctors = async (doctorsData) => {
       console.log(`✅ Created: ${doctorData.name}`);
       console.log(`   Email: ${email} | Passkey: ${passkey}`);
       console.log(`   Specialization: ${doctorData.specialization} | Fee: ₹${consultationFee}`);
+      console.log(`   Rating: ${avgRating.toFixed(1)}⭐ (${totalRatings} reviews) | Experience: ${experience} years`);
+      console.log(`   Success Rate: ${successRate}% | Consultations: ${totalConsultations}`);
     }
   }
 
   if (created > 5) {
-    console.log(`   ... and ${created - 5} more doctors`);
+    console.log(`   ... and ${created - 5} more doctors created`);
+  }
+  
+  if (updated > 3) {
+    console.log(`   ... and ${updated - 3} more doctors updated with ratings`);
   }
 
-  console.log(`\n✅ Doctors: ${created} created, ${skipped} skipped`);
-  return { created, skipped };
+  console.log(`\n✅ Doctors: ${created} created, ${updated} updated, ${skipped} skipped`);
+  return { created, skipped, updated };
 };
 
 // 3. SEED PATIENTS
@@ -375,7 +451,12 @@ const seedAppointments = async () => {
   console.log('\n📅 SEEDING APPOINTMENTS...');
   console.log('─'.repeat(70));
 
-  const patients = await User.find({ role: 'patient' });
+  // Only use predefined test patients (patient1@test.com through patient10@test.com)
+  const predefinedPatientEmails = Array.from({ length: 10 }, (_, i) => `patient${i + 1}@test.com`);
+  const patients = await User.find({ 
+    role: 'patient',
+    email: { $in: predefinedPatientEmails }
+  });
   const doctors = await User.find({ role: 'doctor' });
 
   if (patients.length === 0 || doctors.length === 0) {
@@ -460,6 +541,87 @@ const seedAppointments = async () => {
 
   console.log(`✅ Appointments: ${created} created across ${patients.length} patients and ${doctors.length} doctors`);
   return { created, skipped: 0 };
+};
+
+// 4.5. ADD RATINGS FOR ALL DOCTORS
+const addRatingsForAllDoctors = async () => {
+  console.log('\n⭐ ADDING RATINGS FOR ALL DOCTORS...');
+  console.log('─'.repeat(70));
+
+  // Only use predefined test patients (patient1@test.com through patient10@test.com)
+  const predefinedPatientEmails = Array.from({ length: 10 }, (_, i) => `patient${i + 1}@test.com`);
+  const patients = await User.find({ 
+    role: 'patient',
+    email: { $in: predefinedPatientEmails }
+  });
+
+  // Get all doctors
+  const allDoctors = await User.find({ role: 'doctor' });
+  
+  // Check which doctors don't have enough ratings
+  const doctorsNeedingRatings = [];
+  for (const doctor of allDoctors) {
+    const existingRatings = await Appointment.countDocuments({
+      doctor: doctor._id,
+      rating: { $exists: true }
+    });
+    
+    if (existingRatings < 3) { // Ensure every doctor has at least 3 ratings
+      doctorsNeedingRatings.push({ doctor, needsRatings: 3 - existingRatings });
+    }
+  }
+
+  let ratingsAdded = 0;
+  const timeSlots = ['09:00-10:00', '10:00-11:00', '11:00-12:00', '14:00-15:00', '15:00-16:00', '16:00-17:00'];
+  const symptoms = [
+    'Regular checkup', 'Consultation', 'Follow-up visit', 'Health screening',
+    'Preventive care', 'Routine examination', 'Medical advice', 'Health assessment'
+  ];
+  const diagnoses = [
+    'Normal health status - continue regular lifestyle',
+    'Mild condition managed with lifestyle changes',
+    'Regular monitoring advised - good progress',
+    'Excellent health status - maintain current routine',
+    'Minor condition resolved - follow preventive care',
+    'Satisfactory health - recommended annual checkup'
+  ];
+  const prescriptions = [
+    'Maintain healthy diet and regular exercise',
+    'Continue current medications as prescribed',
+    'Follow-up in 6 months for routine checkup',
+    'Vitamin supplements recommended',
+    'Regular monitoring advised - good health status',
+    'Preventive care measures discussed'
+  ];
+
+  for (const { doctor, needsRatings } of doctorsNeedingRatings) {
+    for (let i = 0; i < needsRatings + Math.floor(Math.random() * 5); i++) { // Add 3-8 ratings per doctor
+      const randomPatient = patients[Math.floor(Math.random() * patients.length)];
+      
+      // Create appointment date in the past (last 6 months)
+      const appointmentDate = new Date();
+      appointmentDate.setDate(appointmentDate.getDate() - Math.floor(Math.random() * 180));
+      
+      const appointmentData = {
+        patient: randomPatient._id,
+        doctor: doctor._id,
+        appointmentDate: appointmentDate,
+        timeSlot: timeSlots[Math.floor(Math.random() * timeSlots.length)],
+        symptoms: symptoms[Math.floor(Math.random() * symptoms.length)],
+        status: 'completed',
+        diagnosis: diagnoses[Math.floor(Math.random() * diagnoses.length)],
+        prescription: prescriptions[Math.floor(Math.random() * prescriptions.length)],
+        rating: Math.floor(Math.random() * 2) + 4 // 4-5 stars for realistic high ratings
+      };
+
+      await Appointment.create(appointmentData);
+      ratingsAdded++;
+    }
+  }
+
+  console.log(`✅ Ratings: ${ratingsAdded} additional rated appointments created for ${doctorsNeedingRatings.length} doctors`);
+  console.log(`   Now all ${allDoctors.length} doctors have sufficient ratings!`);
+  return { created: ratingsAdded, skipped: allDoctors.length - doctorsNeedingRatings.length };
 };
 
 // 5. SEED PAYMENTS
@@ -744,7 +906,12 @@ const seedChatLogs = async () => {
   console.log('\n💬 SEEDING CHAT LOGS...');
   console.log('─'.repeat(70));
 
-  const patients = await User.find({ role: 'patient' }).limit(5);
+  // Only use predefined test patients (patient1@test.com through patient5@test.com)
+  const predefinedPatientEmails = Array.from({ length: 5 }, (_, i) => `patient${i + 1}@test.com`);
+  const patients = await User.find({ 
+    role: 'patient',
+    email: { $in: predefinedPatientEmails }
+  }).limit(5);
   
   if (patients.length === 0) {
     console.log('⚠️  No patients found for chat logs');
@@ -809,6 +976,7 @@ const seedAll = async () => {
     doctors: { created: 0, skipped: 0 },
     patients: { created: 0, skipped: 0 },
     appointments: { created: 0, skipped: 0 },
+    doctorRatings: { created: 0, skipped: 0 },
     payments: { created: 0, skipped: 0, revenue: 0 },
     intents: { created: 0, skipped: 0 },
     chatLogs: { created: 0, skipped: 0 }
@@ -834,6 +1002,7 @@ const seedAll = async () => {
     results.doctors = await seedDoctors(data.doctors);
     results.patients = await seedPatients();
     results.appointments = await seedAppointments();
+    results.doctorRatings = await addRatingsForAllDoctors();
     results.payments = await seedPayments();
     results.intents = await seedIntents();
     results.chatLogs = await seedChatLogs();
@@ -850,9 +1019,10 @@ const seedAll = async () => {
     console.log('\n📊 SUMMARY:');
     console.log('─'.repeat(70));
     console.log(`   Admins:       ${results.admins.created} created, ${results.admins.skipped} skipped`);
-    console.log(`   Doctors:      ${results.doctors.created} created, ${results.doctors.skipped} skipped`);
+    console.log(`   Doctors:      ${results.doctors.created} created, ${results.doctors.updated || 0} updated, ${results.doctors.skipped} skipped`);
     console.log(`   Patients:     ${results.patients.created} created, ${results.patients.skipped} skipped`);
     console.log(`   Appointments: ${results.appointments.created} created`);
+    console.log(`   Doctor Ratings: ${results.doctorRatings.created} rated appointments added (${results.doctorRatings.skipped} doctors already had ratings)`);
     console.log(`   Payments:     ${results.payments.created} created (₹${results.payments.revenue.toLocaleString()} revenue)`);
     console.log(`   Intents:      ${results.intents.created} created, ${results.intents.skipped} skipped`);
     console.log(`   Chat Logs:    ${results.chatLogs.created} created`);
@@ -881,6 +1051,8 @@ const seedAll = async () => {
 
     console.log('\n💡 NOTES:');
     console.log('   • All users have unique payment passkeys');
+    console.log('   • Doctors automatically get ratings (4.0-5.0) with reviews');
+    console.log('   • Existing doctors are auto-updated with ratings if missing');
     console.log('   • Appointments span past 30 days and next 30 days');
     console.log('   • Completed appointments include diagnosis & prescriptions');
     console.log('   • All doctors are auto-approved and verified');

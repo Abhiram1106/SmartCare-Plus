@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import ChangePasswordForm from '../../components/ChangePasswordForm';
 
 const AdminProfile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState({});
   const [isEditing, setIsEditing] = useState(false);
@@ -311,6 +314,23 @@ const AdminProfile = () => {
                 </div>
               </div>
             </div>
+
+            {/* Change Password Section */}
+            <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+              <div className="flex items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                    <svg className="w-7 h-7 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z" />
+                    </svg>
+                    Change Password
+                  </h2>
+                  <p className="text-gray-600 mt-2 ml-10">Update your administrator password for security</p>
+                </div>
+              </div>
+
+              <ChangePasswordForm />
+            </div>
           </div>
 
           {/* Statistics Sidebar */}
@@ -363,14 +383,23 @@ const AdminProfile = () => {
             <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg shadow-md p-6 text-white">
               <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <button className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all">
+                <button 
+                  onClick={() => navigate('/admin/users')}
+                  className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all font-medium"
+                >
                   View All Users
                 </button>
-                <button className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all">
+                <button 
+                  onClick={() => navigate('/admin/appointments')}
+                  className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all font-medium"
+                >
                   Manage Appointments
                 </button>
-                <button className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all">
-                  System Reports
+                <button 
+                  onClick={() => navigate('/admin/chatlogs')}
+                  className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all font-medium"
+                >
+                  View Chat Logs
                 </button>
               </div>
             </div>

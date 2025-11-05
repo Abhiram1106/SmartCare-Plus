@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import ChangePasswordForm from '../../components/ChangePasswordForm';
 
 const DoctorProfile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState({
     totalAppointments: 0,
@@ -396,6 +399,23 @@ const DoctorProfile = () => {
                 </div>
               </div>
             </div>
+
+            {/* Change Password Section */}
+            <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+              <div className="flex items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                    <svg className="w-7 h-7 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                    Change Password
+                  </h2>
+                  <p className="text-gray-600 mt-2 ml-10">Update your account password for security</p>
+                </div>
+              </div>
+
+              <ChangePasswordForm />
+            </div>
           </div>
 
           {/* Statistics Sidebar */}
@@ -461,6 +481,31 @@ const DoctorProfile = () => {
                   ? 'Your profile has been verified by SmartCare Plus administration'
                   : 'Your profile is under review. Verification typically takes 24-48 hours'}
               </p>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg shadow-md p-6 text-white">
+              <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <button 
+                  onClick={() => navigate('/doctor/appointments')}
+                  className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all font-medium"
+                >
+                  View Appointments
+                </button>
+                <button 
+                  onClick={() => navigate('/doctor/dashboard')}
+                  className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all font-medium"
+                >
+                  Dashboard Overview
+                </button>
+                <button 
+                  onClick={() => navigate('/doctor/appointments')}
+                  className="w-full py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all font-medium"
+                >
+                  Patient History
+                </button>
+              </div>
             </div>
           </div>
         </div>

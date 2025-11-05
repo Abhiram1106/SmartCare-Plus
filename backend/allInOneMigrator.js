@@ -23,6 +23,7 @@ require('dotenv').config();
 // Import models
 const User = require('./models/User');
 const Doctor = require('./models/Doctor');
+const Appointment = require('./models/Appointment');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DATABASE CONNECTION
@@ -329,7 +330,101 @@ const migrateDoctorFields = async () => {
   return { updated, skipped, details: updateSummary };
 };
 
-// 3. FUTURE MIGRATION PLACEHOLDER
+// 3. ENSURE ALL DOCTORS HAVE RATINGS
+const ensureDoctorRatings = async () => {
+  console.log('\n⭐ ENSURING ALL DOCTORS HAVE RATINGS...');
+  console.log('─'.repeat(70));
+
+  // Only use predefined test patients (patient1@test.com through patient10@test.com)
+  const predefinedPatientEmails = Array.from({ length: 10 }, (_, i) => `patient${i + 1}@test.com`);
+  const patients = await User.find({ 
+    role: 'patient',
+    email: { $in: predefinedPatientEmails }
+  });
+
+  if (patients.length === 0) {
+    console.log('⚠️  No test patients found. Skipping rating migration.');
+    return { updated: 0, skipped: 0 };
+  }
+
+  // Get all doctors
+  const allDoctors = await User.find({ role: 'doctor' });
+  
+  // Check which doctors don't have enough ratings
+  const doctorsNeedingRatings = [];
+  for (const doctor of allDoctors) {
+    const existingRatings = await Appointment.countDocuments({
+      doctor: doctor._id,
+      rating: { $exists: true }
+    });
+    
+    if (existingRatings < 3) { // Ensure every doctor has at least 3 ratings
+      doctorsNeedingRatings.push({ doctor, needsRatings: 3 - existingRatings });
+    }
+  }
+
+  if (doctorsNeedingRatings.length === 0) {
+    console.log('✅ All doctors already have sufficient ratings.');
+    return { updated: 0, skipped: allDoctors.length };
+  }
+
+  let ratingsAdded = 0;
+  const timeSlots = ['09:00-10:00', '10:00-11:00', '11:00-12:00', '14:00-15:00', '15:00-16:00', '16:00-17:00'];
+  const symptoms = [
+    'Regular checkup', 'Consultation', 'Follow-up visit', 'Health screening',
+    'Preventive care', 'Routine examination', 'Medical advice', 'Health assessment'
+  ];
+  const diagnoses = [
+    'Normal health status - continue regular lifestyle',
+    'Mild condition managed with lifestyle changes',
+    'Regular monitoring advised - good progress',
+    'Excellent health status - maintain current routine',
+    'Minor condition resolved - follow preventive care',
+    'Satisfactory health - recommended annual checkup'
+  ];
+  const prescriptions = [
+    'Maintain healthy diet and regular exercise',
+    'Continue current medications as prescribed',
+    'Follow-up in 6 months for routine checkup',
+    'Vitamin supplements recommended',
+    'Regular monitoring advised - good health status',
+    'Preventive care measures discussed'
+  ];
+
+  for (const { doctor, needsRatings } of doctorsNeedingRatings) {
+    console.log(`   Adding ratings for Dr. ${doctor.name} (${doctor.specialization})`);
+    
+    for (let i = 0; i < needsRatings + Math.floor(Math.random() * 5); i++) { // Add 3-8 ratings per doctor
+      const randomPatient = patients[Math.floor(Math.random() * patients.length)];
+      
+      // Create appointment date in the past (last 6 months)
+      const appointmentDate = new Date();
+      appointmentDate.setDate(appointmentDate.getDate() - Math.floor(Math.random() * 180));
+      
+      const appointmentData = {
+        patient: randomPatient._id,
+        doctor: doctor._id,
+        appointmentDate: appointmentDate,
+        timeSlot: timeSlots[Math.floor(Math.random() * timeSlots.length)],
+        symptoms: symptoms[Math.floor(Math.random() * symptoms.length)],
+        status: 'completed',
+        diagnosis: diagnoses[Math.floor(Math.random() * diagnoses.length)],
+        prescription: prescriptions[Math.floor(Math.random() * prescriptions.length)],
+        rating: Math.floor(Math.random() * 2) + 4 // 4-5 stars for realistic high ratings
+      };
+
+      await Appointment.create(appointmentData);
+      ratingsAdded++;
+    }
+  }
+
+  console.log(`✅ Added ${ratingsAdded} rated appointments for ${doctorsNeedingRatings.length} doctors`);
+  console.log(`   All ${allDoctors.length} doctors now have sufficient ratings!`);
+  
+  return { updated: ratingsAdded, skipped: allDoctors.length - doctorsNeedingRatings.length };
+};
+
+// 4. FUTURE MIGRATION PLACEHOLDER
 const futureSchemaUpdates = async () => {
   console.log('\n🔄 CHECKING FOR FUTURE SCHEMA UPDATES...');
   console.log('─'.repeat(70));
@@ -354,6 +449,7 @@ const migrateAll = async () => {
   const results = {
     users: { updated: 0, skipped: 0 },
     doctors: { updated: 0, skipped: 0 },
+    doctorRatings: { updated: 0, skipped: 0 },
     future: { updated: 0, skipped: 0 }
   };
 
@@ -367,13 +463,14 @@ const migrateAll = async () => {
     // Execute migrations in order
     results.users = await migrateUserFields();
     results.doctors = await migrateDoctorFields();
+    results.doctorRatings = await ensureDoctorRatings();
     results.future = await futureSchemaUpdates();
 
     // Calculate statistics
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
-    const totalUpdated = results.users.updated + results.doctors.updated + results.future.updated;
-    const totalSkipped = results.users.skipped + results.doctors.skipped + results.future.skipped;
+    const totalUpdated = results.users.updated + results.doctors.updated + results.doctorRatings.updated + results.future.updated;
+    const totalSkipped = results.users.skipped + results.doctors.skipped + results.doctorRatings.skipped + results.future.skipped;
 
     // Display summary
     console.log('\n');
@@ -386,6 +483,7 @@ const migrateAll = async () => {
     console.log(`   Users Skipped:        ${results.users.skipped}`);
     console.log(`   Doctors Updated:      ${results.doctors.updated}`);
     console.log(`   Doctors Skipped:      ${results.doctors.skipped}`);
+    console.log(`   Doctor Ratings Added: ${results.doctorRatings.updated} (${results.doctorRatings.skipped} doctors already had ratings)`);
     console.log('─'.repeat(70));
     console.log(`   Total Updated:        ${totalUpdated}`);
     console.log(`   Total Skipped:        ${totalSkipped}`);

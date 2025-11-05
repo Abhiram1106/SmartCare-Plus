@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationCenter from './NotificationCenter';
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -57,65 +58,65 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50 border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20">
-          {/* Logo Section */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-3 group">
+    <nav className="bg-gradient-to-r from-white via-teal-50 to-white shadow-lg sticky top-0 z-50 border-b-2 border-teal-200">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-20">
+          {/* Logo Section - Left */}
+          <div className="flex items-center flex-shrink-0 w-48">
+            <Link to="/" className="flex items-center space-x-2 group">
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <div className="w-10 h-10 bg-gradient-to-br from-teal-600 to-cyan-600 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
                 </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-sm"></div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-                  SmartCare Plus
+              <div className="hidden md:flex md:items-center md:h-10">
+                <h1 className="text-xl font-extrabold bg-gradient-to-r from-teal-700 to-cyan-700 bg-clip-text text-transparent whitespace-nowrap tracking-tight">
+                  SmartCare+
                 </h1>
-                <p className="text-xs text-gray-500 -mt-1">Healthcare System</p>
               </div>
             </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:ml-10 md:flex md:space-x-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive(link.to)
-                      ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-teal-600'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
           </div>
 
-          {/* Right Section */}
-          <div className="hidden md:flex md:items-center md:space-x-4">
+          {/* Desktop Navigation - Center */}
+          <div className="hidden lg:flex lg:items-center lg:space-x-1 flex-1 justify-center">
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
+                  isActive(link.to)
+                    ? 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-lg scale-105'
+                    : 'text-gray-800 hover:bg-teal-100 hover:text-teal-700 hover:scale-105'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Right Section - Fixed Width */}
+          <div className="hidden lg:flex lg:items-center lg:space-x-3 flex-shrink-0 w-48 justify-end">
             {isAuthenticated ? (
               <>
+                <NotificationCenter user={user} />
                 <Link
                   to={`/${user?.role}/profile`}
-                  className="flex items-center space-x-3 px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:shadow-md hover:border-teal-300 transition-all duration-200 cursor-pointer"
+                  className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg border-2 border-teal-200 hover:shadow-lg hover:border-teal-400 transition-all duration-200 cursor-pointer hover:scale-105"
                 >
                   <div className="flex flex-col items-end">
-                    <span className="text-sm font-semibold text-gray-800">{user?.name}</span>
-                    <span className="text-xs text-gray-500 capitalize">{user?.role}</span>
+                    <span className="text-sm font-bold text-gray-900 whitespace-nowrap">{user?.name}</span>
+                    <span className="text-xs text-teal-700 capitalize font-semibold">{user?.role}</span>
                   </div>
-                  <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                  <div className="w-9 h-9 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg text-sm">
                     {user?.name?.charAt(0).toUpperCase()}
                   </div>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                  className="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg font-bold text-sm shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 whitespace-nowrap"
                 >
                   Logout
                 </button>
@@ -124,18 +125,22 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex items-center md:hidden">
+          <div className="flex items-center lg:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-teal-600 hover:bg-gray-100 focus:outline-none transition-colors duration-200"
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d={mobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
-                />
+              <svg
+                className="h-6 w-6"
+                stroke="currentColor"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
               </svg>
             </button>
           </div>
