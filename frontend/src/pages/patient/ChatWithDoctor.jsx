@@ -3,10 +3,13 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../hooks/useSocket';
 import api from '../../services/api';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../../components/ToastContainer';
 
 const ChatWithDoctor = React.memo(() => {
   const { user } = useAuth();
   const socket = useSocket();
+  const { showError } = useToast();
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -237,9 +240,9 @@ const ChatWithDoctor = React.memo(() => {
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Failed to send message');
+      showError('Failed to send message');
     }
-  }, [newMessage, selectedDoctor, user.name, user.id, socket, createRoomId]);
+  }, [newMessage, selectedDoctor, user.name, user.id, socket, createRoomId, showError]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 py-8">
@@ -455,6 +458,8 @@ const ChatWithDoctor = React.memo(() => {
           </div>
         </div>
       </div>
+      
+      <ToastContainer />
     </div>
   );
 });

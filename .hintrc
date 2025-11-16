@@ -8,9 +8,11 @@
       {
         "ignore": [
           "backdrop-filter",
-          "-webkit-text-size-adjust"
+          "-webkit-text-size-adjust",
+          "-webkit-mask"
         ]
       }
-    ]
+    ],
+    "no-inline-styles": "off"
   }
 }

@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../../components/ToastContainer';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 const ManageAppointments = () => {
+  const { showSuccess, showError } = useToast();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   useEffect(() => {
     fetchAppointments();
@@ -18,7 +24,7 @@ const ManageAppointments = () => {
       setAppointments(response.data || []);
     } catch (error) {
       console.error('Error fetching appointments:', error);
-      alert('Failed to fetch appointments');
+      showError('Failed to fetch appointments');
     } finally {
       setLoading(false);
     }
@@ -27,25 +33,31 @@ const ManageAppointments = () => {
   const handleUpdateStatus = async (id, status) => {
     try {
       await api.put(`/appointments/${id}`, { status });
-      alert('Status updated successfully');
+      showSuccess('Status updated successfully');
       fetchAppointments();
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Failed to update status');
+      showError('Failed to update status');
     }
   };
 
   const handleDeleteAppointment = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this appointment?')) return;
-    
-    try {
-      await api.delete(`/appointments/${id}`);
-      alert('Appointment deleted successfully');
-      fetchAppointments();
-    } catch (error) {
-      console.error('Error deleting appointment:', error);
-      alert('Failed to delete appointment');
-    }
+    setConfirmAction({
+      title: 'Delete Appointment',
+      message: 'Are you sure you want to delete this appointment? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/appointments/${id}`);
+          showSuccess('Appointment deleted successfully');
+          fetchAppointments();
+        } catch (error) {
+          console.error('Error deleting appointment:', error);
+          showError('Failed to delete appointment');
+        }
+        setShowConfirmDialog(false);
+      }
+    });
+    setShowConfirmDialog(true);
   };
 
   const filteredAppointments = appointments.filter(apt => {
@@ -260,6 +272,18 @@ const ManageAppointments = () => {
             </div>
           </div>
         )}
+
+        {showConfirmDialog && confirmAction && (
+          <ConfirmDialog
+            isOpen={showConfirmDialog}
+            title={confirmAction.title}
+            message={confirmAction.message}
+            onConfirm={confirmAction.onConfirm}
+            onCancel={() => setShowConfirmDialog(false)}
+          />
+        )}
+        
+        <ToastContainer />
       </div>
     </div>
   );

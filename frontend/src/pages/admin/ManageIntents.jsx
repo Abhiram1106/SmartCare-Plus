@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../../components/ToastContainer';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 const ManageIntents = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [intents, setIntents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingIntent, setEditingIntent] = useState(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
   const [formData, setFormData] = useState({
     tag: '',
     patterns: '',
@@ -25,23 +31,29 @@ const ManageIntents = () => {
       setIntents(response.data || []);
     } catch (error) {
       console.error('Error fetching intents:', error);
-      alert('Failed to fetch intents');
+      showError('Failed to fetch intents');
     } finally {
       setLoading(false);
     }
   };
 
   const handleSeedIntents = async () => {
-    if (!window.confirm('This will seed default intents. Continue?')) return;
-    
-    try {
-      await api.post('/intents/seed');
-      alert('Intents seeded successfully');
-      fetchIntents();
-    } catch (error) {
-      console.error('Error seeding intents:', error);
-      alert('Failed to seed intents');
-    }
+    setConfirmAction({
+      title: 'Seed Default Intents',
+      message: 'This will seed default intents. Continue?',
+      onConfirm: async () => {
+        try {
+          await api.post('/intents/seed');
+          showSuccess('Intents seeded successfully');
+          fetchIntents();
+        } catch (error) {
+          console.error('Error seeding intents:', error);
+          showError('Failed to seed intents');
+        }
+        setShowConfirmDialog(false);
+      }
+    });
+    setShowConfirmDialog(true);
   };
 
   const handleSubmit = async (e) => {
@@ -58,10 +70,10 @@ const ManageIntents = () => {
     try {
       if (editingIntent) {
         await api.put(`/intents/${editingIntent._id}`, intentData);
-        alert('Intent updated successfully');
+        showSuccess('Intent updated successfully');
       } else {
         await api.post('/intents', intentData);
-        alert('Intent created successfully');
+        showSuccess('Intent created successfully');
       }
       
       setShowModal(false);
@@ -76,7 +88,7 @@ const ManageIntents = () => {
       fetchIntents();
     } catch (error) {
       console.error('Error saving intent:', error);
-      alert('Failed to save intent');
+      showError('Failed to save intent');
     }
   };
 
@@ -93,16 +105,22 @@ const ManageIntents = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this intent?')) return;
-    
-    try {
-      await api.delete(`/intents/${id}`);
-      alert('Intent deleted successfully');
-      fetchIntents();
-    } catch (error) {
-      console.error('Error deleting intent:', error);
-      alert('Failed to delete intent');
-    }
+    setConfirmAction({
+      title: 'Delete Intent',
+      message: 'Are you sure you want to delete this intent? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/intents/${id}`);
+          showSuccess('Intent deleted successfully');
+          fetchIntents();
+        } catch (error) {
+          console.error('Error deleting intent:', error);
+          showError('Failed to delete intent');
+        }
+        setShowConfirmDialog(false);
+      }
+    });
+    setShowConfirmDialog(true);
   };
 
   const handleToggleActive = async (id, isActive) => {
@@ -111,7 +129,7 @@ const ManageIntents = () => {
       fetchIntents();
     } catch (error) {
       console.error('Error toggling intent:', error);
-      alert('Failed to toggle intent');
+      showError('Failed to toggle intent status');
     }
   };
 
@@ -360,6 +378,18 @@ const ManageIntents = () => {
             </div>
           </div>
         )}
+
+        {showConfirmDialog && confirmAction && (
+          <ConfirmDialog
+            isOpen={showConfirmDialog}
+            title={confirmAction.title}
+            message={confirmAction.message}
+            onConfirm={confirmAction.onConfirm}
+            onCancel={() => setShowConfirmDialog(false)}
+          />
+        )}
+        
+        <ToastContainer />
       </div>
     </div>
   );

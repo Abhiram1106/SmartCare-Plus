@@ -84,6 +84,7 @@
   --z-dropdown: 1000;
   --z-sticky: 1020;
   --z-fixed: 1030;
+  --z-navbar: 1035;
   --z-modal-backdrop: 1040;
   --z-modal: 1050;
   --z-popover: 1060;
@@ -98,6 +99,17 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+/* Fixed Navbar - Ensure proper layering */
+nav[class*="fixed"] {
+  z-index: var(--z-navbar) !important;
+  width: 100%;
+}
+
+/* Prevent content from going behind navbar */
+.main-content-wrapper {
+  padding-top: 5rem; /* Height of navbar */
 }
 
 html {
@@ -115,6 +127,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  position: relative;
 }
 
 /* Premium Typography System */
@@ -588,6 +601,36 @@ a:hover {
   50% { 
     opacity: 0.5;
     transform: scale(1.1);
+  }
+}
+
+/* ============================================
+   REVIEW & RATING SYSTEM ANIMATIONS
+   ============================================ */
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
   }
 }
 
@@ -1327,6 +1370,30 @@ a:hover {
   }
   100% {
     transform: translateX(100%);
+  }
+}
+
+/* Toast & Dialog Animations */
+.animate-slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

@@ -448,6 +448,12 @@ const Doctors = () => {
                         {/* Action Buttons */}
                         <div className="space-y-2">
                           <Link
+                            to={`/patient/doctors/${doctor._id}`}
+                            className="block w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white text-center py-3 px-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105"
+                          >
+                            View Profile & Reviews
+                          </Link>
+                          <Link
                             to={`/patient/book-appointment/${doctor._id}`}
                             className="block w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-center py-3 px-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105"
                           >

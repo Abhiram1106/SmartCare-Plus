@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../../components/ToastContainer';
 
 const BookAppointment = () => {
   const { doctorId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showSuccess } = useToast();
   const [doctor, setDoctor] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [formData, setFormData] = useState({
@@ -83,7 +86,7 @@ const BookAppointment = () => {
 
       const response = await api.post('/appointments', appointmentData);
       
-      alert('Appointment booked successfully! Please proceed to payment.');
+      showSuccess('Appointment booked successfully! Please proceed to payment.');
       navigate(`/patient/payment-gateway?appointmentId=${response.data._id}`);
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to book appointment');
@@ -346,6 +349,8 @@ const BookAppointment = () => {
           </button>
         </div>
       </form>
+      
+      <ToastContainer />
     </div>
   );
 };

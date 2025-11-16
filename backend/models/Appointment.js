@@ -26,14 +26,21 @@ const appointmentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'completed', 'cancelled'],
+    enum: ['pending', 'approved', 'rejected', 'paid', 'completed', 'cancelled'],
     default: 'pending'
   },
-  diagnosis: {
-    type: String,
-    default: ''
+  // Doctor approval fields
+  doctorResponse: {
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected']
+    },
+    message: String,
+    respondedAt: Date
   },
-  prescription: {
+  
+  // Medical fields (filled after visit)
+  diagnosis: {
     type: String,
     default: ''
   },
@@ -41,14 +48,30 @@ const appointmentSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  
+  // Digital prescription reference
+  prescription: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Prescription'
+  },
   patientHistory: {
     allergies: String,
     currentMedications: String,
     previousConditions: String
   },
+  // Payment information
   payment: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Payment'
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed', 'refunded'],
+    default: 'pending'
+  },
+  amount: {
+    type: Number,
+    required: true
   },
   rating: {
     type: Number,

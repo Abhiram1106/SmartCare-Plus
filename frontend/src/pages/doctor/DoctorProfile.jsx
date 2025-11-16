@@ -3,10 +3,13 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import ChangePasswordForm from '../../components/ChangePasswordForm';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../../components/ToastContainer';
 
 const DoctorProfile = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState({
     totalAppointments: 0,
@@ -98,12 +101,12 @@ const DoctorProfile = () => {
     e.preventDefault();
     try {
       await api.put(`/admin/users/${user.id}`, formData);
-      alert('Profile updated successfully!');
+      showSuccess('Profile updated successfully!');
       setIsEditing(false);
       fetchProfile();
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile');
+      showError('Failed to update profile');
     }
   };
 
@@ -154,6 +157,14 @@ const DoctorProfile = () => {
                 <div className="ml-6">
                   <h3 className="text-2xl font-bold text-gray-800">Dr. {profile?.name}</h3>
                   <p className="text-gray-600">{profile?.specialization}</p>
+                  {profile?.userId && (
+                    <p className="text-green-600 font-semibold mt-1 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                      </svg>
+                      ID: {profile.userId}
+                    </p>
+                  )}
                   <div className="flex items-center mt-2">
                     <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
                       {profile?.approved || profile?.isApproved ? '✓ Verified Doctor' : '⏳ Pending Verification'}
@@ -304,6 +315,10 @@ const DoctorProfile = () => {
               ) : (
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-sm text-gray-600">Doctor ID</p>
+                      <p className="font-semibold text-green-600 mt-1 text-lg">{profile?.userId || 'Not assigned'}</p>
+                    </div>
                     <div>
                       <p className="text-sm text-gray-600">Email</p>
                       <p className="font-semibold text-gray-800 mt-1">{profile?.email}</p>
@@ -510,6 +525,8 @@ const DoctorProfile = () => {
           </div>
         </div>
       </div>
+      
+      <ToastContainer />
     </div>
   );
 };

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../../components/ToastContainer';
 
 const PaymentGateway = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showSuccess, showError, showWarning } = useToast();
   const [step, setStep] = useState(1); // 1: Payment Method, 2: Details, 3: Verification
   const [appointment, setAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +48,7 @@ const PaymentGateway = () => {
       setAppointment(response.data);
     } catch (error) {
       console.error('Error fetching appointment:', error);
-      alert('Appointment not found');
+      showError('Appointment not found');
       navigate('/patient/appointments');
     } finally {
       setLoading(false);
@@ -76,34 +79,34 @@ const PaymentGateway = () => {
 
     if (method === 'card') {
       if (!cardNumber || cardNumber.length !== 16) {
-        alert('Please enter a valid 16-digit card number');
+        showWarning('Please enter a valid 16-digit card number');
         return false;
       }
       if (!cardHolderName) {
-        alert('Please enter card holder name');
+        showWarning('Please enter card holder name');
         return false;
       }
       if (!expiryMonth || !expiryYear) {
-        alert('Please select expiry date');
+        showWarning('Please select expiry date');
         return false;
       }
       if (!cvv || cvv.length !== 3) {
-        alert('Please enter a valid 3-digit CVV');
+        showWarning('Please enter a valid 3-digit CVV');
         return false;
       }
     } else if (method === 'upi') {
       if (!upiId || !upiId.includes('@')) {
-        alert('Please enter a valid UPI ID');
+        showWarning('Please enter a valid UPI ID');
         return false;
       }
     } else if (method === 'netbanking') {
       if (!bankName) {
-        alert('Please select a bank');
+        showWarning('Please select a bank');
         return false;
       }
     } else if (method === 'wallet') {
       if (!walletProvider) {
-        alert('Please select a wallet provider');
+        showWarning('Please select a wallet provider');
         return false;
       }
     }
@@ -119,7 +122,7 @@ const PaymentGateway = () => {
 
   const processPayment = async () => {
     if (!paymentData.passkey) {
-      alert('Please enter your payment passkey');
+      showWarning('Please enter your payment passkey');
       return;
     }
 
@@ -151,11 +154,11 @@ const PaymentGateway = () => {
       });
 
       // Show success animation
-      alert('✅ Payment Successful! Your appointment is confirmed.');
+      showSuccess('✅ Payment Successful! Your appointment is confirmed.');
       navigate('/patient/appointments');
     } catch (error) {
       console.error('Payment error:', error);
-      alert(error.response?.data?.message || 'Payment failed. Please try again.');
+      showError(error.response?.data?.message || 'Payment failed. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -589,6 +592,7 @@ const PaymentGateway = () => {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../../components/ToastContainer';
 
 const PatientHistory = () => {
+  const { showError } = useToast();
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patientAppointments, setPatientAppointments] = useState([]);
@@ -37,7 +40,7 @@ const PatientHistory = () => {
       setPatients(uniquePatients);
     } catch (error) {
       console.error('Error fetching patients:', error);
-      alert('Failed to fetch patients');
+      showError('Failed to fetch patients');
     } finally {
       setLoading(false);
     }
@@ -50,7 +53,7 @@ const PatientHistory = () => {
       setPatientAppointments(appointments.sort((a, b) => new Date(b.date) - new Date(a.date)));
     } catch (error) {
       console.error('Error fetching patient appointments:', error);
-      alert('Failed to fetch patient history');
+      showError('Failed to fetch patient history');
     }
   };
 
@@ -246,6 +249,7 @@ const PatientHistory = () => {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

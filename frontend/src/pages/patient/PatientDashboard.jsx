@@ -123,39 +123,158 @@ const PatientDashboard = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Link
-          to="/patient/doctors"
-          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6 hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105"
-        >
-          <h3 className="text-xl font-bold mb-2">Find Doctors</h3>
-          <p className="text-blue-100">Browse and book appointments with qualified doctors</p>
-        </Link>
+      {/* Quick Actions - Core Features */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+          <svg className="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Quick Actions
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            to="/patient/doctors"
+            className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 border-transparent hover:border-blue-500"
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-500 transition-colors">
+                <svg className="w-6 h-6 text-blue-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <svg className="w-5 h-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-1 group-hover:text-blue-600">Find Doctors</h3>
+            <p className="text-sm text-gray-600">Browse qualified specialists</p>
+          </Link>
 
-        <Link
-          to="/patient/chat"
-          className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg shadow-lg p-6 hover:from-cyan-600 hover:to-cyan-700 transition-all transform hover:scale-105"
-        >
-          <h3 className="text-xl font-bold mb-2">Chat with Doctor</h3>
-          <p className="text-cyan-100">Message your doctors instantly</p>
-        </Link>
+          <Link
+            to="/patient/chat"
+            className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 border-transparent hover:border-cyan-500"
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center group-hover:bg-cyan-500 transition-colors">
+                <svg className="w-6 h-6 text-cyan-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <svg className="w-5 h-5 text-gray-400 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-1 group-hover:text-cyan-600">Chat with Doctor</h3>
+            <p className="text-sm text-gray-600">Instant messaging</p>
+          </Link>
 
-        <Link
-          to="/patient/appointments"
-          className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-lg p-6 hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105"
-        >
-          <h3 className="text-xl font-bold mb-2">My Appointments</h3>
-          <p className="text-green-100">View and manage your scheduled appointments</p>
-        </Link>
+          <Link
+            to="/patient/appointments"
+            className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 border-transparent hover:border-green-500"
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-500 transition-colors">
+                <svg className="w-6 h-6 text-green-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <svg className="w-5 h-5 text-gray-400 group-hover:text-green-500 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-1 group-hover:text-green-600">My Appointments</h3>
+            <p className="text-sm text-gray-600">Manage your schedule</p>
+          </Link>
 
-        <Link
-          to="/chatbot"
-          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg shadow-lg p-6 hover:from-purple-600 hover:to-purple-700 transition-all transform hover:scale-105"
-        >
-          <h3 className="text-xl font-bold mb-2">AI Assistant</h3>
-          <p className="text-purple-100">Get instant answers to your healthcare questions</p>
-        </Link>
+          <Link
+            to="/chatbot"
+            className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 border-transparent hover:border-purple-500"
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-500 transition-colors">
+                <svg className="w-6 h-6 text-purple-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <svg className="w-5 h-5 text-gray-400 group-hover:text-purple-500 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-1 group-hover:text-purple-600">AI Assistant</h3>
+            <p className="text-sm text-gray-600">Healthcare questions</p>
+          </Link>
+        </div>
+      </div>
+
+      {/* Premium Features */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+          <svg className="w-6 h-6 mr-2 text-amber-600" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          Premium Features
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link
+            to="/patient/medical-records"
+            className="group bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 border-teal-200 hover:border-teal-400"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                <span className="text-3xl">📋</span>
+              </div>
+              <span className="px-3 py-1 bg-teal-500 text-white text-xs font-bold rounded-full">EHR</span>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-teal-600">Medical Records</h3>
+            <p className="text-sm text-gray-700 mb-4">Complete electronic health records and medical history</p>
+            <div className="flex items-center text-teal-600 font-semibold text-sm group-hover:translate-x-2 transition-transform">
+              Access Records
+              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </Link>
+
+          <Link
+            to="/patient/telemedicine"
+            className="group bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 border-orange-200 hover:border-orange-400"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                <span className="text-3xl">🎥</span>
+              </div>
+              <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">NEW</span>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-orange-600">Telemedicine</h3>
+            <p className="text-sm text-gray-700 mb-4">Secure video consultations with healthcare providers</p>
+            <div className="flex items-center text-orange-600 font-semibold text-sm group-hover:translate-x-2 transition-transform">
+              Start Consultation
+              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </Link>
+
+          <Link
+            to="/patient/symptom-checker"
+            className="group bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border-2 border-pink-200 hover:border-pink-400"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                <span className="text-3xl">🤖</span>
+              </div>
+              <span className="px-3 py-1 bg-pink-500 text-white text-xs font-bold rounded-full">AI</span>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-pink-600">Symptom Checker</h3>
+            <p className="text-sm text-gray-700 mb-4">AI-powered disease prediction and health insights</p>
+            <div className="flex items-center text-pink-600 font-semibold text-sm group-hover:translate-x-2 transition-transform">
+              Check Symptoms
+              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </Link>
+        </div>
       </div>
 
       {/* Recent Appointments */}

@@ -30,6 +30,7 @@ export default function Navbar() {
           { to: '/patient/dashboard', label: 'Dashboard' },
           { to: '/patient/doctors', label: 'Find Doctors' },
           { to: '/patient/appointments', label: 'My Appointments' },
+          { to: '/patient/prescriptions', label: 'My Prescriptions' },
           { to: '/patient/payments', label: 'Payments' },
           { to: '/patient/profile', label: 'Profile' }
         ];
@@ -37,6 +38,7 @@ export default function Navbar() {
         return [
           { to: '/doctor/dashboard', label: 'Dashboard' },
           { to: '/doctor/appointments', label: 'Appointments' },
+          { to: '/doctor/prescriptions', label: 'Prescriptions' },
           { to: '/doctor/profile', label: 'Profile' }
         ];
       case 'admin':
@@ -58,7 +60,7 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="bg-gradient-to-r from-white via-teal-50 to-white shadow-lg sticky top-0 z-50 border-b-2 border-teal-200">
+    <nav className="bg-gradient-to-r from-white via-teal-50 to-white shadow-lg fixed top-0 left-0 right-0 z-50 border-b-2 border-teal-200">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo Section - Left */}

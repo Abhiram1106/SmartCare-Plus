@@ -73,7 +73,12 @@ router.post('/', auth, authorize('patient'), async (req, res) => {
       appointmentDate: new Date(appointmentDate),
       timeSlot,
       symptoms,
-      patientHistory
+      patientHistory,
+      status: 'pending', // Start with pending status for doctor approval
+      amount: doctor.consultationFee,
+      doctorResponse: {
+        status: 'pending'
+      }
     });
 
     await appointment.save();
@@ -200,6 +205,152 @@ router.put('/:id', auth, async (req, res) => {
     res.json(appointment);
   } catch (error) {
     console.error('Error updating appointment:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// @route   PUT /api/appointments/:id/approve
+// @desc    Doctor approve/reject appointment
+// @access  Private (Doctor only)
+router.put('/:id/approve', auth, authorize('doctor'), async (req, res) => {
+  try {
+    const { status, message } = req.body; // status: 'approved' or 'rejected'
+    
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Status must be approved or rejected' });
+    }
+
+    const appointment = await Appointment.findById(req.params.id);
+    
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+
+    // Verify doctor owns this appointment
+    if (appointment.doctor.toString() !== req.userId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Update appointment
+    appointment.status = status;
+    appointment.doctorResponse = {
+      status,
+      message: message || '',
+      respondedAt: new Date()
+    };
+
+    await appointment.save();
+    await appointment.populate('patient', 'name email phone');
+    await appointment.populate('doctor', 'name email specialization');
+
+    res.json({ 
+      message: `Appointment ${status} successfully`,
+      appointment 
+    });
+  } catch (error) {
+    console.error('Error approving appointment:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// @route   PUT /api/appointments/:id/complete
+// @desc    Mark appointment as completed and add prescription
+// @access  Private (Doctor only)
+router.put('/:id/complete', auth, authorize('doctor'), async (req, res) => {
+  try {
+    const { diagnosis, notes, prescriptionData } = req.body;
+
+    const appointment = await Appointment.findById(req.params.id);
+    
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+
+    // Verify doctor owns this appointment
+    if (appointment.doctor.toString() !== req.userId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Must be paid before completing
+    if (appointment.paymentStatus !== 'paid') {
+      return res.status(400).json({ message: 'Payment must be completed before marking as completed' });
+    }
+
+    // Create prescription if provided
+    let prescription = null;
+    if (prescriptionData) {
+      const Prescription = require('../models/Prescription');
+      prescription = new Prescription({
+        appointment: appointment._id,
+        patient: appointment.patient,
+        doctor: appointment.doctor,
+        ...prescriptionData,
+        doctorSignature: {
+          signed: true,
+          signedAt: new Date()
+        }
+      });
+      await prescription.save();
+    }
+
+    // Update appointment
+    appointment.status = 'completed';
+    appointment.diagnosis = diagnosis || '';
+    appointment.notes = notes || '';
+    if (prescription) {
+      appointment.prescription = prescription._id;
+    }
+
+    await appointment.save();
+    await appointment.populate('patient', 'name email phone');
+    await appointment.populate('doctor', 'name email specialization');
+    await appointment.populate('prescription');
+
+    res.json({ 
+      message: 'Appointment completed successfully',
+      status: appointment.status,
+      appointment,
+      prescription 
+    });
+  } catch (error) {
+    console.error('Error completing appointment:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// @route   GET /api/appointments/:id/prescription
+// @desc    Get prescription for appointment
+// @access  Private (Patient/Doctor)
+router.get('/:id/prescription', auth, async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id)
+      .populate('prescription')
+      .populate('patient', 'name email phone')
+      .populate('doctor', 'name email specialization');
+    
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+
+    // Check access - patient or doctor involved in appointment
+    const isPatient = req.user.role === 'patient' && appointment.patient._id.toString() === req.userId;
+    const isDoctor = req.user.role === 'doctor' && appointment.doctor._id.toString() === req.userId;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isPatient && !isDoctor && !isAdmin) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    if (!appointment.prescription) {
+      return res.status(404).json({ message: 'No prescription found for this appointment' });
+    }
+
+    res.json({
+      appointment,
+      prescription: appointment.prescription
+    });
+  } catch (error) {
+    console.error('Error fetching prescription:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

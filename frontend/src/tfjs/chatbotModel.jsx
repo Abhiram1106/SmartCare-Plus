@@ -32,17 +32,17 @@ export const createModel = (vocabSize, numIntents) => {
   
   model.add(tf.layers.embedding({
     inputDim: vocabSize + 1,
-    outputDim: 16,
+    outputDim: 12, // Reduced for faster training
     inputLength: maxLen
   }));
   
   model.add(tf.layers.globalAveragePooling1d());
   model.add(tf.layers.dense({ units: 16, activation: 'relu' }));
-  model.add(tf.layers.dropout({ rate: 0.5 }));
+  model.add(tf.layers.dropout({ rate: 0.3 })); // Reduced dropout
   model.add(tf.layers.dense({ units: numIntents, activation: 'softmax' }));
   
   model.compile({
-    optimizer: 'adam',
+    optimizer: tf.train.adam(0.003), // Faster learning rate
     loss: 'categoricalCrossentropy',
     metrics: ['accuracy']
   });
@@ -78,11 +78,21 @@ export const trainModel = async (intents) => {
     
     model = createModel(vocabulary.length, intents.length);
     
+    // SUPER FAST training
     await model.fit(xsTensor, ysTensor, {
-      epochs: 50,
-      batchSize: 8,
+      epochs: 12, // Drastically reduced from 50
+      batchSize: 32, // Increased from 8 for faster processing
       verbose: 0,
-      validationSplit: 0.2
+      validationSplit: 0.15, // Reduced validation
+      callbacks: {
+        onEpochEnd: async (epoch, logs) => {
+          // Early stopping if accuracy is good
+          if (logs.acc > 0.88) {
+            console.log('🚀 Fast training complete - Target accuracy reached!');
+            model.stopTraining = true;
+          }
+        }
+      }
     });
     
     xsTensor.dispose();

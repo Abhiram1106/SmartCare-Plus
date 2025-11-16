@@ -17,19 +17,29 @@ const EnhancedChatbot = lazy(() => import('./pages/EnhancedChatbot'));
 // Patient Pages
 const PatientDashboard = lazy(() => import('./pages/patient/PatientDashboard'));
 const Doctors = lazy(() => import('./pages/patient/Doctors'));
+const DoctorDetails = lazy(() => import('./pages/DoctorDetails'));
 const BookAppointment = lazy(() => import('./pages/patient/BookAppointment'));
 const MyAppointments = lazy(() => import('./pages/patient/MyAppointments'));
+const MyPrescriptions = lazy(() => import('./pages/patient/MyPrescriptions'));
 const MyPayments = lazy(() => import('./pages/patient/MyPayments'));
 const PatientProfile = lazy(() => import('./pages/patient/PatientProfile'));
 const PaymentGateway = lazy(() => import('./pages/patient/PaymentGateway'));
 const ChatWithDoctor = lazy(() => import('./pages/patient/ChatWithDoctor'));
+const MyReviews = lazy(() => import('./pages/MyReviews'));
+
+// Premium Patient Features
+const MedicalRecords = lazy(() => import('./pages/patient/MedicalRecords'));
+const Telemedicine = lazy(() => import('./pages/patient/Telemedicine'));
+const AISymptomChecker = lazy(() => import('./pages/patient/AISymptomChecker'));
 
 // Doctor Pages
 const DoctorDashboard = lazy(() => import('./pages/doctor/DoctorDashboard'));
 const DoctorAppointments = lazy(() => import('./pages/doctor/DoctorAppointments'));
+const DoctorPrescriptions = lazy(() => import('./pages/doctor/DoctorPrescriptions'));
 const PatientHistory = lazy(() => import('./pages/doctor/PatientHistory'));
 const DoctorProfile = lazy(() => import('./pages/doctor/DoctorProfile'));
 const DoctorChat = lazy(() => import('./pages/doctor/DoctorChat'));
+const DoctorReviews = lazy(() => import('./pages/doctor/DoctorReviews'));
 
 // Admin Pages
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -39,6 +49,11 @@ const ManageIntents = lazy(() => import('./pages/admin/ManageIntents'));
 const ChatLogs = lazy(() => import('./pages/admin/ChatLogs'));
 const AdminProfile = lazy(() => import('./pages/admin/AdminProfile'));
 const AnalyticsDashboard = lazy(() => import('./pages/admin/AnalyticsDashboard'));
+const ManageReviews = lazy(() => import('./components/reviews/AdminReviewModeration'));
+
+// Premium Admin Features
+const PredictiveAnalytics = lazy(() => import('./pages/admin/PredictiveAnalytics'));
+const SecurityAuditLogs = lazy(() => import('./pages/admin/SecurityAuditLogs'));
 
 // Loading component
 const LoadingFallback = () => (
@@ -57,7 +72,7 @@ export default function App() {
         <Navbar />
         <FloatingChatButton />
         <Suspense fallback={<LoadingFallback />}>
-          <div className="min-h-screen bg-gray-50">
+          <div className="min-h-screen bg-gray-50 pt-20">
             <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
@@ -84,6 +99,22 @@ export default function App() {
               }
             />
             <Route
+              path="/patient/doctors/:id"
+              element={
+                <PrivateRoute roles={['patient']}>
+                  <DoctorDetails />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/patient/my-reviews"
+              element={
+                <PrivateRoute roles={['patient']}>
+                  <MyReviews />
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/patient/book-appointment"
               element={
                 <PrivateRoute roles={['patient']}>
@@ -104,6 +135,14 @@ export default function App() {
               element={
                 <PrivateRoute roles={['patient']}>
                   <MyAppointments />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/patient/prescriptions"
+              element={
+                <PrivateRoute roles={['patient']}>
+                  <MyPrescriptions />
                 </PrivateRoute>
               }
             />
@@ -139,6 +178,30 @@ export default function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/patient/medical-records"
+              element={
+                <PrivateRoute roles={['patient']}>
+                  <MedicalRecords />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/patient/telemedicine"
+              element={
+                <PrivateRoute roles={['patient']}>
+                  <Telemedicine />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/patient/symptom-checker"
+              element={
+                <PrivateRoute roles={['patient']}>
+                  <AISymptomChecker />
+                </PrivateRoute>
+              }
+            />
 
             {/* Doctor Routes */}
             <Route
@@ -154,6 +217,22 @@ export default function App() {
               element={
                 <PrivateRoute roles={['doctor']}>
                   <DoctorAppointments />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/doctor/prescriptions"
+              element={
+                <PrivateRoute roles={['doctor']}>
+                  <DoctorPrescriptions />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/doctor/reviews"
+              element={
+                <PrivateRoute roles={['doctor']}>
+                  <DoctorReviews />
                 </PrivateRoute>
               }
             />
@@ -236,6 +315,30 @@ export default function App() {
               element={
                 <PrivateRoute roles={['admin']}>
                   <AnalyticsDashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/reviews"
+              element={
+                <PrivateRoute roles={['admin']}>
+                  <ManageReviews />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/predictive-analytics"
+              element={
+                <PrivateRoute roles={['admin']}>
+                  <PredictiveAnalytics />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/security-audit"
+              element={
+                <PrivateRoute roles={['admin']}>
+                  <SecurityAuditLogs />
                 </PrivateRoute>
               }
             />

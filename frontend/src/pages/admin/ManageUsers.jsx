@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../../components/ToastContainer';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
@@ -10,6 +13,8 @@ const ManageUsers = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
+  const { toasts, removeToast, showSuccess, showError, showWarning, showInfo } = useToast();
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, action: null, message: '', title: '' });
 
   useEffect(() => {
     fetchUsers();
@@ -23,18 +28,26 @@ const ManageUsers = () => {
       setUsers(response.data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
-      alert('Failed to fetch users');
+      showError('Failed to fetch users');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApproveDoctor = async (id) => {
-    if (!window.confirm('Are you sure you want to approve this doctor?')) return;
-    
+  const handleApproveDoctor = (id) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Approve Doctor',
+      message: 'Are you sure you want to approve this doctor?',
+      action: () => confirmApproveDoctor(id)
+    });
+  };
+
+  const confirmApproveDoctor = async (id) => {
+    setConfirmDialog({ isOpen: false, action: null, message: '', title: '' });
     try {
       const response = await api.put(`/admin/users/${id}/approve`);
-      alert('Doctor approved successfully');
+      showSuccess('Doctor approved successfully');
       
       // Update the local state immediately for instant UI feedback
       setUsers(prevUsers => 
@@ -49,16 +62,24 @@ const ManageUsers = () => {
       await fetchUsers();
     } catch (error) {
       console.error('Error approving doctor:', error);
-      alert(error.response?.data?.message || 'Failed to approve doctor');
+      showError(error.response?.data?.message || 'Failed to approve doctor');
     }
   };
 
-  const handleRejectDoctor = async (id) => {
-    if (!window.confirm('Are you sure you want to reject this doctor?')) return;
-    
+  const handleRejectDoctor = (id) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Reject Doctor',
+      message: 'Are you sure you want to reject this doctor?',
+      action: () => confirmRejectDoctor(id)
+    });
+  };
+
+  const confirmRejectDoctor = async (id) => {
+    setConfirmDialog({ isOpen: false, action: null, message: '', title: '' });
     try {
       const response = await api.put(`/admin/users/${id}/reject`);
-      alert('Doctor rejected successfully');
+      showSuccess('Doctor rejected successfully');
       
       // Update the local state immediately for instant UI feedback
       setUsers(prevUsers => 
@@ -73,20 +94,28 @@ const ManageUsers = () => {
       await fetchUsers();
     } catch (error) {
       console.error('Error rejecting doctor:', error);
-      alert(error.response?.data?.message || 'Failed to reject doctor');
+      showError(error.response?.data?.message || 'Failed to reject doctor');
     }
   };
 
-  const handleDeleteUser = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-    
+  const handleDeleteUser = (id) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete User',
+      message: 'Are you sure you want to delete this user? This action cannot be undone.',
+      action: () => confirmDeleteUser(id)
+    });
+  };
+
+  const confirmDeleteUser = async (id) => {
+    setConfirmDialog({ isOpen: false, action: null, message: '', title: '' });
     try {
       await api.delete(`/admin/users/${id}`);
-      alert('User deleted successfully');
+      showSuccess('User deleted successfully');
       fetchUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Failed to delete user');
+      showError('Failed to delete user');
     }
   };
 
@@ -114,9 +143,9 @@ const ManageUsers = () => {
     });
   };
 
-  const handleBulkApprove = async () => {
+  const handleBulkApprove = () => {
     if (selectedUsers.length === 0) {
-      alert('Please select users to approve');
+      showWarning('Please select users to approve');
       return;
     }
     
@@ -126,29 +155,37 @@ const ManageUsers = () => {
     );
     
     if (selectedDoctors.length === 0) {
-      alert('Please select doctors to approve. Only doctors can be approved.');
+      showWarning('Please select doctors to approve. Only doctors can be approved.');
       return;
     }
     
-    if (!window.confirm(`Are you sure you want to approve ${selectedDoctors.length} selected doctor(s)?`)) return;
-    
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Bulk Approve Doctors',
+      message: `Are you sure you want to approve ${selectedDoctors.length} selected doctor(s)?`,
+      action: () => confirmBulkApprove(selectedDoctors)
+    });
+  };
+
+  const confirmBulkApprove = async (selectedDoctors) => {
+    setConfirmDialog({ isOpen: false, action: null, message: '', title: '' });
     try {
       const response = await api.post('/admin/users/bulk-approve', { 
         userIds: selectedDoctors.map(d => d._id) 
       });
-      alert(response.data.message);
+      showSuccess(response.data.message);
       setSelectedUsers([]);
       setSelectAll(false);
       fetchUsers();
     } catch (error) {
       console.error('Error bulk approving doctors:', error);
-      alert(error.response?.data?.message || 'Failed to approve selected doctors');
+      showError(error.response?.data?.message || 'Failed to approve selected doctors');
     }
   };
 
-  const handleBulkReject = async () => {
+  const handleBulkReject = () => {
     if (selectedUsers.length === 0) {
-      alert('Please select users to reject');
+      showWarning('Please select users to reject');
       return;
     }
     
@@ -158,29 +195,37 @@ const ManageUsers = () => {
     );
     
     if (selectedDoctors.length === 0) {
-      alert('Please select doctors to reject. Only doctors can be rejected.');
+      showWarning('Please select doctors to reject. Only doctors can be rejected.');
       return;
     }
     
-    if (!window.confirm(`Are you sure you want to reject ${selectedDoctors.length} selected doctor(s)?`)) return;
-    
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Bulk Reject Doctors',
+      message: `Are you sure you want to reject ${selectedDoctors.length} selected doctor(s)?`,
+      action: () => confirmBulkReject(selectedDoctors)
+    });
+  };
+
+  const confirmBulkReject = async (selectedDoctors) => {
+    setConfirmDialog({ isOpen: false, action: null, message: '', title: '' });
     try {
       const response = await api.post('/admin/users/bulk-reject', { 
         userIds: selectedDoctors.map(d => d._id) 
       });
-      alert(response.data.message);
+      showSuccess(response.data.message);
       setSelectedUsers([]);
       setSelectAll(false);
       fetchUsers();
     } catch (error) {
       console.error('Error bulk rejecting doctors:', error);
-      alert(error.response?.data?.message || 'Failed to reject selected doctors');
+      showError(error.response?.data?.message || 'Failed to reject selected doctors');
     }
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedUsers.length === 0) {
-      alert('Please select users to delete');
+      showWarning('Please select users to delete');
       return;
     }
     
@@ -190,42 +235,58 @@ const ManageUsers = () => {
     );
     
     if (selectedNonAdmins.length === 0) {
-      alert('Cannot delete admin users. Please select other users.');
+      showError('Cannot delete admin users. Please select other users.');
       return;
     }
     
     if (selectedNonAdmins.length !== selectedUsers.length) {
-      alert(`Note: ${selectedUsers.length - selectedNonAdmins.length} admin user(s) will be skipped.`);
+      showInfo(`Note: ${selectedUsers.length - selectedNonAdmins.length} admin user(s) will be skipped.`);
     }
     
-    if (!window.confirm(`Are you sure you want to delete ${selectedNonAdmins.length} selected user(s)? This action cannot be undone.`)) return;
-    
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Bulk Delete Users',
+      message: `Are you sure you want to delete ${selectedNonAdmins.length} selected user(s)? This action cannot be undone.`,
+      action: () => confirmBulkDelete(selectedNonAdmins)
+    });
+  };
+
+  const confirmBulkDelete = async (selectedNonAdmins) => {
+    setConfirmDialog({ isOpen: false, action: null, message: '', title: '' });
     try {
       const response = await api.post('/admin/users/bulk-delete', { 
         userIds: selectedNonAdmins.map(u => u._id) 
       });
-      alert(response.data.message);
+      showSuccess(response.data.message);
       setSelectedUsers([]);
       setSelectAll(false);
       fetchUsers();
     } catch (error) {
       console.error('Error bulk deleting users:', error);
-      alert(error.response?.data?.message || 'Failed to delete selected users');
+      showError(error.response?.data?.message || 'Failed to delete selected users');
     }
   };
 
-  const handleApproveAllDoctors = async () => {
-    if (!window.confirm('Are you sure you want to approve ALL pending doctors?')) return;
-    
+  const handleApproveAllDoctors = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Approve All Doctors',
+      message: 'Are you sure you want to approve ALL pending doctors?',
+      action: confirmApproveAllDoctors
+    });
+  };
+
+  const confirmApproveAllDoctors = async () => {
+    setConfirmDialog({ isOpen: false, action: null, message: '', title: '' });
     try {
       const response = await api.post('/admin/users/approve-all-doctors');
-      alert(response.data.message);
+      showSuccess(response.data.message);
       setSelectedUsers([]);
       setSelectAll(false);
       fetchUsers();
     } catch (error) {
       console.error('Error approving all doctors:', error);
-      alert(error.response?.data?.message || 'Failed to approve all doctors');
+      showError(error.response?.data?.message || 'Failed to approve all doctors');
     }
   };
 
@@ -236,7 +297,7 @@ const ManageUsers = () => {
       setShowModal(true);
     } catch (error) {
       console.error('Error fetching user details:', error);
-      alert('Failed to fetch user details');
+      showError('Failed to fetch user details');
     }
   };
 
@@ -272,6 +333,16 @@ const ManageUsers = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.action}
+        onCancel={() => setConfirmDialog({ isOpen: false, action: null, message: '', title: '' })}
+        confirmText="Confirm"
+        type="warning"
+      />
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Manage Users</h1>

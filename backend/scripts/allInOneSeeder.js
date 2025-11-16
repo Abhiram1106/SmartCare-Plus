@@ -29,12 +29,12 @@ const path = require('path');
 require('dotenv').config();
 
 // Import models
-const User = require('./models/User');
-const Doctor = require('./models/Doctor');
-const Appointment = require('./models/Appointment');
-const Payment = require('./models/Payment');
-const Intent = require('./models/Intent');
-const ChatLog = require('./models/ChatLog');
+const User = require('../models/User');
+const Doctor = require('../models/Doctor');
+const Appointment = require('../models/Appointment');
+const Payment = require('../models/Payment');
+const Intent = require('../models/Intent');
+const ChatLog = require('../models/ChatLog');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -46,7 +46,7 @@ const CONFIG = {
     doctor: 'doctor123',
     patient: 'patient123'
   },
-  DATA_FILE: '../SmartCarePlus_full_dataset.json',
+  DATA_FILE: '../../SmartCarePlus_full_dataset.json',
   SAMPLE_PATIENTS_COUNT: 10,
   APPOINTMENTS_COUNT: 30,
   CHAT_LOGS_COUNT: 15
@@ -93,6 +93,33 @@ const generatePhoneNumber = () => {
 // Generate random 4-digit payment passkey
 const generatePasskey = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
+};
+
+// Generate custom user ID (SMP####)
+const generateCustomUserId = async () => {
+  try {
+    // Find the highest existing user ID number
+    const lastUser = await User.findOne({ userId: { $exists: true, $ne: null, $ne: '' } })
+      .sort({ userId: -1 })
+      .select('userId')
+      .lean();
+    
+    let nextNumber = 1000; // Start from SMP1000
+    
+    if (lastUser && lastUser.userId) {
+      // Extract number from format SMP####
+      const lastNumber = parseInt(lastUser.userId.replace('SMP', ''));
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
+      }
+    }
+    
+    return `SMP${nextNumber}`;
+  } catch (error) {
+    console.error('Error generating userId:', error);
+    // Fallback to random number if error
+    return `SMP${Math.floor(1000 + Math.random() * 9000)}`;
+  }
 };
 
 // Generate random gender
@@ -196,9 +223,11 @@ const seedAdmins = async () => {
     }
 
     const hashedPassword = await hashPassword(CONFIG.DEFAULT_PASSWORDS.admin);
+    const userId = await generateCustomUserId();
     
     await User.create({
       ...adminData,
+      userId: userId,
       password: hashedPassword,
       role: 'admin'
     });
@@ -283,8 +312,10 @@ const seedDoctors = async (doctorsData) => {
     const age = getRandomAge(30, 65);
     const consultationFee = getRandomConsultationFee();
     const passkey = generatePasskey();
+    const userId = await generateCustomUserId();
     
     const user = await User.create({
+      userId: userId,
       name: doctorData.name,
       email: email,
       password: hashedPassword,
@@ -418,8 +449,10 @@ const seedPatients = async () => {
 
     const hashedPassword = await hashPassword(CONFIG.DEFAULT_PASSWORDS.patient);
     const passkey = generatePasskey();
+    const userId = await generateCustomUserId();
 
     await User.create({
+      userId: userId,
       name: patientData.name,
       email: email,
       password: hashedPassword,
@@ -991,11 +1024,28 @@ const seedAll = async () => {
 
     // Load data
     console.log('\n📂 Loading dataset...');
-    const data = loadJSONData();
+    let data = loadJSONData();
     if (!data) {
-      throw new Error('Failed to load dataset');
+      console.log('⚠️  External dataset not found, using built-in sample data');
+      // Fallback to built-in sample data if JSON file doesn't exist
+      data = {
+        doctors: [
+          { name: 'Dr. Rajesh Kumar', specialization: 'Cardiology', experience: 15, rating: 4.8, contact: 'rajesh.kumar@smartcare.com', availableSlots: ['09:00-10:00', '10:00-11:00', '14:00-15:00'] },
+          { name: 'Dr. Priya Sharma', specialization: 'Dermatology', experience: 10, rating: 4.7, contact: 'priya.sharma@smartcare.com', availableSlots: ['09:00-10:00', '11:00-12:00', '15:00-16:00'] },
+          { name: 'Dr. Amit Patel', specialization: 'Neurology', experience: 12, rating: 4.9, contact: 'amit.patel@smartcare.com', availableSlots: ['10:00-11:00', '11:00-12:00', '16:00-17:00'] },
+          { name: 'Dr. Sneha Gupta', specialization: 'Pediatrics', experience: 8, rating: 4.6, contact: 'sneha.gupta@smartcare.com', availableSlots: ['09:00-10:00', '14:00-15:00', '15:00-16:00'] },
+          { name: 'Dr. Vikram Singh', specialization: 'Orthopedics', experience: 14, rating: 4.8, contact: 'vikram.singh@smartcare.com', availableSlots: ['10:00-11:00', '11:00-12:00', '14:00-15:00'] },
+          { name: 'Dr. Ananya Reddy', specialization: 'Gynecology', experience: 11, rating: 4.7, contact: 'ananya.reddy@smartcare.com', availableSlots: ['09:00-10:00', '10:00-11:00', '15:00-16:00'] },
+          { name: 'Dr. Karthik Menon', specialization: 'ENT', experience: 9, rating: 4.5, contact: 'karthik.menon@smartcare.com', availableSlots: ['11:00-12:00', '14:00-15:00', '16:00-17:00'] },
+          { name: 'Dr. Divya Nair', specialization: 'General Medicine', experience: 7, rating: 4.4, contact: 'divya.nair@smartcare.com', availableSlots: ['09:00-10:00', '10:00-11:00', '14:00-15:00'] },
+          { name: 'Dr. Rohan Desai', specialization: 'Urology', experience: 13, rating: 4.8, contact: 'rohan.desai@smartcare.com', availableSlots: ['10:00-11:00', '15:00-16:00', '16:00-17:00'] },
+          { name: 'Dr. Meera Iyer', specialization: 'Ophthalmology', experience: 10, rating: 4.6, contact: 'meera.iyer@smartcare.com', availableSlots: ['09:00-10:00', '11:00-12:00', '14:00-15:00'] }
+        ],
+        departments: [],
+        diseases: []
+      };
     }
-    console.log(`✅ Loaded: ${data.doctors.length} doctors, ${data.departments.length} departments, ${data.diseases.length} diseases`);
+    console.log(`✅ Loaded: ${data.doctors.length} doctors`);
 
     // Execute seeding in order
     results.admins = await seedAdmins();
@@ -1050,6 +1100,7 @@ const seedAll = async () => {
     console.log('═'.repeat(70));
 
     console.log('\n💡 NOTES:');
+    console.log('   • All users automatically get custom User IDs (SMP####)');
     console.log('   • All users have unique payment passkeys');
     console.log('   • Doctors automatically get ratings (4.0-5.0) with reviews');
     console.log('   • Existing doctors are auto-updated with ratings if missing');

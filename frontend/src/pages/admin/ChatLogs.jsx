@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../../components/ToastContainer';
 
 const ChatLogs = () => {
+  const { showError } = useToast();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -18,7 +21,7 @@ const ChatLogs = () => {
       setLogs(response.data || []);
     } catch (error) {
       console.error('Error fetching chat logs:', error);
-      alert('Failed to fetch chat logs');
+      showError('Failed to fetch chat logs');
     } finally {
       setLoading(false);
     }
@@ -30,7 +33,7 @@ const ChatLogs = () => {
       fetchChatLogs();
     } catch (error) {
       console.error('Error marking as reviewed:', error);
-      alert('Failed to mark as reviewed');
+      showError('Failed to mark as reviewed');
     }
   };
 
@@ -227,6 +230,8 @@ const ChatLogs = () => {
           </div>
         )}
       </div>
+      
+      <ToastContainer />
     </div>
   );
 };

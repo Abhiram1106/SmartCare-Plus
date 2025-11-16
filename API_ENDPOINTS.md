@@ -5,9 +5,27 @@
 This document provides comprehensive information about all API endpoints available in the SmartCarePlus healthcare management system.
 
 **Base URL:** `http://localhost:5000/api`  
-**Total Endpoints:** 72 HTTP endpoints + 8 Socket.io events  
+**Total Endpoints:** 120+ HTTP endpoints + 8 Socket.io events  
 **Authentication:** JWT Bearer Token  
-**Database:** MongoDB with Mongoose ODM
+**Database:** MongoDB with Mongoose ODM  
+**Version:** 1.0.0  
+**Last Updated:** November 8, 2025
+
+## 🆕 New Features
+
+- ✅ OTP email verification for registration
+- ✅ Custom User ID system (SMP####)
+- ✅ Professional email notifications
+- ✅ Enhanced user profiles with userId display
+- ✅ Email testing endpoints
+
+**Premium Features:**
+
+- 🏥 Electronic Health Records (EHR) - 9 endpoints
+- 📹 Telemedicine Video Consultation - 9 endpoints
+- 🤖 AI Symptom Checker & Disease Prediction - 7 endpoints
+- 📈 Predictive Analytics System - 7 endpoints
+- 🔒 RBAC & Security System - 10 endpoints
 
 ---
 
@@ -15,7 +33,7 @@ This document provides comprehensive information about all API endpoints availab
 
 ### POST `/auth/register`
 
-**Description:** Register a new user (patient, doctor, or admin)  
+**Description:** Register a new user with OTP email verification  
 **Access:** Public  
 **Method:** POST  
 
@@ -27,7 +45,7 @@ This document provides comprehensive information about all API endpoints availab
   "email": "john@example.com",
   "password": "password123",
   "phone": "+1234567890",
-  "role": "patient", // "patient", "doctor", "admin"
+  "role": "patient",
   
   // For doctors only:
   "specialization": "Cardiology",
@@ -41,13 +59,63 @@ This document provides comprehensive information about all API endpoints availab
 
 ```json
 {
+  "message": "OTP sent to your email. Please verify to complete registration.",
+  "email": "john@example.com",
+  "otpSent": true
+}
+```
+
+### POST `/auth/verify-otp`
+
+**Description:** Verify OTP and complete registration  
+**Access:** Public  
+**Method:** POST  
+
+**Request Body:**
+
+```json
+{
+  "email": "john@example.com",
+  "otp": "123456"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Email verified successfully. Registration complete!",
   "token": "jwt_token_here",
   "user": {
     "id": "user_id",
+    "userId": "SMP1001",
     "name": "John Doe",
     "email": "john@example.com",
     "role": "patient"
   }
+}
+```
+
+### POST `/auth/resend-otp`
+
+**Description:** Resend OTP to email  
+**Access:** Public  
+**Method:** POST  
+
+**Request Body:**
+
+```json
+{
+  "email": "john@example.com"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "New OTP sent to your email",
+  "email": "john@example.com"
 }
 ```
 
@@ -92,10 +160,12 @@ This document provides comprehensive information about all API endpoints availab
 ```json
 {
   "id": "user_id",
+  "userId": "SMP1001",
   "name": "John Doe",
   "email": "john@example.com",
   "role": "patient",
-  "phone": "+1234567890"
+  "phone": "+1234567890",
+  "emailVerified": true
 }
 ```
 
@@ -119,6 +189,30 @@ This document provides comprehensive information about all API endpoints availab
 ```json
 {
   "valid": true
+}
+```
+
+### PUT `/auth/update-passkey`
+
+**Description:** Update user's payment passkey  
+**Access:** Private (All roles)  
+**Method:** PUT  
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+
+```json
+{
+  "currentPassword": "password123",
+  "newPasskey": "5678"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Payment passkey updated successfully"
 }
 ```
 
@@ -712,6 +806,385 @@ This document provides comprehensive information about all API endpoints availab
 
 ---
 
+## ⭐ Review & Rating Endpoints
+
+### POST `/reviews`
+
+**Description:** Create a new review for a doctor  
+**Access:** Private (Patient only)  
+**Method:** POST  
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+
+```json
+{
+  "doctor": "doctor_id",
+  "appointment": "appointment_id",
+  "rating": 5,
+  "title": "Excellent Doctor!",
+  "comment": "Very professional and caring. Highly recommend!",
+  "detailedRatings": {
+    "communication": 5,
+    "punctuality": 5,
+    "bedsideManner": 5
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "_id": "review_id",
+  "patient": {
+    "_id": "patient_id",
+    "name": "John Doe"
+  },
+  "doctor": {
+    "_id": "doctor_id",
+    "name": "Dr. Smith"
+  },
+  "rating": 5,
+  "title": "Excellent Doctor!",
+  "comment": "Very professional and caring. Highly recommend!",
+  "detailedRatings": {
+    "communication": 5,
+    "punctuality": 5,
+    "bedsideManner": 5
+  },
+  "status": "approved",
+  "verified": true,
+  "helpfulVotes": 0,
+  "notHelpfulVotes": 0,
+  "createdAt": "2025-11-05T10:00:00.000Z"
+}
+```
+
+### GET `/reviews/doctor/:doctorId`
+
+**Description:** Get all approved reviews for a specific doctor  
+**Access:** Public  
+**Method:** GET  
+
+**Query Parameters:**
+
+- `page` - Page number (default: 1)
+- `limit` - Reviews per page (default: 10)
+- `sort` - Sort by: helpful, -createdAt, rating-high, rating-low
+- `minRating` - Filter by minimum rating (1-5)
+- `verified` - Filter verified patients only (true/false)
+
+**Response:**
+
+```json
+{
+  "reviews": [
+    {
+      "_id": "review_id",
+      "patient": {
+        "name": "John Doe",
+        "profilePicture": "url"
+      },
+      "rating": 5,
+      "title": "Excellent Doctor!",
+      "comment": "Very professional and caring...",
+      "detailedRatings": {
+        "communication": 5,
+        "punctuality": 5,
+        "bedsideManner": 5
+      },
+      "verified": true,
+      "helpfulVotes": 45,
+      "notHelpfulVotes": 2,
+      "hasResponse": true,
+      "doctorResponse": {
+        "comment": "Thank you for your kind words!",
+        "respondedAt": "2025-11-05T11:00:00.000Z"
+      },
+      "createdAt": "2025-11-05T10:00:00.000Z"
+    }
+  ],
+  "stats": {
+    "averageRating": 4.8,
+    "totalReviews": 127,
+    "ratingBreakdown": {
+      "5": 89,
+      "4": 25,
+      "3": 9,
+      "2": 3,
+      "1": 1
+    }
+  },
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 13,
+    "hasMore": true
+  }
+}
+```
+
+### GET `/reviews/my-reviews`
+
+**Description:** Get all reviews written by the current patient  
+**Access:** Private (Patient only)  
+**Method:** GET  
+**Headers:** `Authorization: Bearer <token>`
+
+**Response:**
+
+```json
+[
+  {
+    "_id": "review_id",
+    "doctor": {
+      "_id": "doctor_id",
+      "name": "Dr. Smith",
+      "specialization": "Cardiology"
+    },
+    "rating": 5,
+    "title": "Excellent Doctor!",
+    "comment": "Very professional...",
+    "status": "approved",
+    "verified": true,
+    "helpfulVotes": 45,
+    "hasResponse": true,
+    "doctorResponse": {
+      "comment": "Thank you!",
+      "respondedAt": "2025-11-05T11:00:00.000Z"
+    },
+    "createdAt": "2025-11-05T10:00:00.000Z"
+  }
+]
+```
+
+### PUT `/reviews/:id`
+
+**Description:** Update own review  
+**Access:** Private (Patient only - must be review owner)  
+**Method:** PUT  
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+
+```json
+{
+  "rating": 4,
+  "title": "Updated Review",
+  "comment": "Updated comment text...",
+  "detailedRatings": {
+    "communication": 5,
+    "punctuality": 4,
+    "bedsideManner": 4
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "_id": "review_id",
+  "rating": 4,
+  "title": "Updated Review",
+  "comment": "Updated comment text...",
+  "isEdited": true,
+  "updatedAt": "2025-11-05T12:00:00.000Z"
+}
+```
+
+### DELETE `/reviews/:id`
+
+**Description:** Delete own review  
+**Access:** Private (Patient only - must be review owner)  
+**Method:** DELETE  
+**Headers:** `Authorization: Bearer <token>`
+
+**Response:**
+
+```json
+{
+  "message": "Review deleted successfully"
+}
+```
+
+### POST `/reviews/:id/vote`
+
+**Description:** Vote review as helpful or not helpful  
+**Access:** Private (All authenticated users)  
+**Method:** POST  
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+
+```json
+{
+  "vote": "helpful" // or "notHelpful"
+}
+```
+
+**Response:**
+
+```json
+{
+  "_id": "review_id",
+  "helpfulVotes": 46,
+  "notHelpfulVotes": 2,
+  "userVote": "helpful"
+}
+```
+
+### POST `/reviews/:id/flag`
+
+**Description:** Flag review as inappropriate  
+**Access:** Private (All authenticated users)  
+**Method:** POST  
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+
+```json
+{
+  "reason": "Inappropriate content or spam"
+}
+```
+
+**Response:**
+
+```json
+{
+  "message": "Review flagged successfully",
+  "flagCount": 1
+}
+```
+
+### POST `/reviews/:id/respond`
+
+**Description:** Doctor responds to a review  
+**Access:** Private (Doctor only - must be the reviewed doctor)  
+**Method:** POST  
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+
+```json
+{
+  "comment": "Thank you for your feedback. I'm glad I could help!"
+}
+```
+
+**Response:**
+
+```json
+{
+  "_id": "review_id",
+  "hasResponse": true,
+  "doctorResponse": {
+    "comment": "Thank you for your feedback...",
+    "respondedAt": "2025-11-05T13:00:00.000Z"
+  }
+}
+```
+
+### GET `/reviews/admin/all`
+
+**Description:** Get all reviews for admin moderation  
+**Access:** Private (Admin only)  
+**Method:** GET  
+**Headers:** `Authorization: Bearer <token>`
+
+**Query Parameters:**
+
+- `status` - Filter by status: pending, approved, rejected, flagged
+- `page` - Page number (default: 1)
+- `limit` - Reviews per page (default: 20)
+
+**Response:**
+
+```json
+{
+  "reviews": [
+    {
+      "_id": "review_id",
+      "patient": { "name": "John Doe" },
+      "doctor": { "name": "Dr. Smith" },
+      "rating": 5,
+      "comment": "Great doctor!",
+      "status": "pending",
+      "flagCount": 0,
+      "createdAt": "2025-11-05T10:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 5,
+    "total": 100
+  }
+}
+```
+
+### PUT `/reviews/admin/:id/moderate`
+
+**Description:** Moderate review (approve/reject/flag)  
+**Access:** Private (Admin only)  
+**Method:** PUT  
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+
+```json
+{
+  "status": "approved", // approved, rejected, flagged
+  "moderationNote": "Review meets guidelines"
+}
+```
+
+**Response:**
+
+```json
+{
+  "_id": "review_id",
+  "status": "approved",
+  "moderatedBy": "admin_id",
+  "moderatedAt": "2025-11-05T14:00:00.000Z",
+  "moderationNote": "Review meets guidelines"
+}
+```
+
+### GET `/reviews/stats/overall`
+
+**Description:** Get overall review system statistics  
+**Access:** Private (Admin only)  
+**Method:** GET  
+**Headers:** `Authorization: Bearer <token>`
+
+**Response:**
+
+```json
+{
+  "totalReviews": 1247,
+  "averageRating": 4.6,
+  "statusBreakdown": {
+    "approved": 1150,
+    "pending": 45,
+    "rejected": 32,
+    "flagged": 20
+  },
+  "verifiedReviews": 1089,
+  "reviewsWithResponses": 456,
+  "recentReviews": [
+    {
+      "patient": "John Doe",
+      "doctor": "Dr. Smith",
+      "rating": 5,
+      "createdAt": "2025-11-05T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
 ## 🔌 Socket.io Real-time Events
 
 ### Connection Events
@@ -1119,6 +1592,621 @@ npm run test:coverage   # Run tests with coverage
 
 ---
 
+---
+
+## 🏥 Electronic Health Records (EHR) System
+
+### GET `/ehr/:patientId`
+
+**Description:** Get patient's complete medical record  
+**Access:** Private (Patient can access own, Doctor/Admin can access any)  
+**Method:** GET  
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "record_id",
+    "patient": "patient_id",
+    "bloodType": "O+",
+    "allergies": [{
+      "allergen": "Penicillin",
+      "reaction": "Skin rash",
+      "severity": "moderate",
+      "diagnosedDate": "2024-01-15T00:00:00.000Z"
+    }],
+    "chronicConditions": ["Hypertension"],
+    "currentMedications": [],
+    "immunizations": [],
+    "labResults": [],
+    "vitalSigns": [],
+    "familyHistory": {},
+    "emergencyContact": {},
+    "insuranceInfo": {}
+  }
+}
+```
+
+### PUT `/ehr/:patientId/basic`
+
+**Description:** Update basic health information  
+**Access:** Private (Patient)  
+**Method:** PUT  
+
+**Request Body:**
+
+```json
+{
+  "bloodType": "O+",
+  "height": 175,
+  "weight": 70,
+  "emergencyContact": {
+    "name": "Emergency Contact",
+    "phone": "+1234567890",
+    "relationship": "Spouse"
+  }
+}
+```
+
+### POST `/ehr/:patientId/allergies`
+
+**Description:** Add allergy to medical record  
+**Access:** Private (Doctor/Admin only)  
+**Method:** POST  
+
+**Request Body:**
+
+```json
+{
+  "allergen": "Penicillin",
+  "reaction": "Skin rash",
+  "severity": "moderate",
+  "diagnosedDate": "2024-01-15T00:00:00.000Z"
+}
+```
+
+### POST `/ehr/:patientId/vitals`
+
+**Description:** Record vital signs  
+**Access:** Private  
+**Method:** POST  
+
+**Request Body:**
+
+```json
+{
+  "temperature": 98.6,
+  "bloodPressure": {
+    "systolic": 120,
+    "diastolic": 80
+  },
+  "heartRate": 72,
+  "respiratoryRate": 16,
+  "oxygenSaturation": 98
+}
+```
+
+### POST `/ehr/:patientId/immunizations`
+
+**Description:** Add immunization record  
+**Access:** Private (Doctor/Admin)  
+**Method:** POST  
+
+### POST `/ehr/:patientId/chronic-conditions`
+
+**Description:** Add chronic condition  
+**Access:** Private (Doctor/Admin)  
+**Method:** POST  
+
+### POST `/ehr/:patientId/lab-results`
+
+**Description:** Add lab test results  
+**Access:** Private (Doctor/Admin)  
+**Method:** POST  
+
+### POST `/ehr/:patientId/medications`
+
+**Description:** Add current medication  
+**Access:** Private (Doctor/Admin)  
+**Method:** POST  
+
+### GET `/ehr/:patientId/summary`
+
+**Description:** Get health summary  
+**Access:** Private  
+**Method:** GET  
+
+---
+
+## 📹 Telemedicine Video Consultation
+
+### POST `/telemedicine/create`
+
+**Description:** Create video consultation room for appointment  
+**Access:** Private (Doctor or Patient)  
+**Method:** POST  
+
+**Request Body:**
+
+```json
+{
+  "appointmentId": "appointment_id",
+  "scheduledTime": "2024-01-15T10:00:00.000Z",
+  "recordingConsent": {
+    "patient": true,
+    "doctor": true
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Video consultation room created",
+  "data": {
+    "_id": "consultation_id",
+    "roomId": "unique_room_id",
+    "appointment": "appointment_id",
+    "patient": {...},
+    "doctor": {...},
+    "scheduledTime": "2024-01-15T10:00:00.000Z",
+    "status": "scheduled"
+  }
+}
+```
+
+### GET `/telemedicine/room/:roomId`
+
+**Description:** Get consultation room details  
+**Access:** Private (Participants only)  
+**Method:** GET  
+
+### POST `/telemedicine/room/:roomId/join`
+
+**Description:** Join consultation room  
+**Access:** Private (Participants only)  
+**Method:** POST  
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Joined consultation room",
+  "data": {
+    "roomId": "unique_room_id",
+    "status": "ongoing",
+    "participants": 2
+  }
+}
+```
+
+### POST `/telemedicine/room/:roomId/leave`
+
+**Description:** Leave consultation room  
+**Access:** Private  
+**Method:** POST  
+
+### POST `/telemedicine/room/:roomId/message`
+
+**Description:** Send message in consultation chat  
+**Access:** Private (Participants only)  
+**Method:** POST  
+
+**Request Body:**
+
+```json
+{
+  "message": "Hello Doctor",
+  "type": "text",
+  "fileUrl": "optional_file_url"
+}
+```
+
+### PUT `/telemedicine/room/:roomId/notes`
+
+**Description:** Add consultation notes (Doctor only)  
+**Access:** Private (Doctor)  
+**Method:** PUT  
+
+**Request Body:**
+
+```json
+{
+  "chiefComplaint": "Headache",
+  "symptoms": ["headache", "fever"],
+  "diagnosis": "Tension headache",
+  "treatment": "Rest and hydration",
+  "followUp": "1 week",
+  "prescriptionId": "prescription_id"
+}
+```
+
+### POST `/telemedicine/room/:roomId/report-issue`
+
+**Description:** Report technical issue  
+**Access:** Private  
+**Method:** POST  
+
+### POST `/telemedicine/room/:roomId/rate`
+
+**Description:** Rate consultation session  
+**Access:** Private (Participants only)  
+**Method:** POST  
+
+**Request Body:**
+
+```json
+{
+  "score": 5,
+  "feedback": "Great consultation"
+}
+```
+
+### GET `/telemedicine/my-consultations`
+
+**Description:** Get user's consultations  
+**Access:** Private  
+**Method:** GET  
+
+---
+
+## 🤖 AI Symptom Checker & Disease Prediction
+
+### POST `/ai-symptom-checker/analyze`
+
+**Description:** Analyze symptoms and predict diseases  
+**Access:** Private  
+**Method:** POST  
+
+**Request Body:**
+
+```json
+{
+  "symptoms": [
+    {
+      "name": "headache",
+      "severity": 7,
+      "duration": "2 days"
+    },
+    {
+      "name": "fever",
+      "severity": 8,
+      "duration": "1 day"
+    }
+  ],
+  "age": 30,
+  "gender": "male",
+  "medicalHistory": ["hypertension"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Symptom analysis completed",
+  "data": {
+    "_id": "analysis_id",
+    "predictions": [
+      {
+        "disease": "Influenza",
+        "confidence": 85.5,
+        "matchedSymptoms": ["fever", "headache"],
+        "severity": "moderate",
+        "recommendation": "Consult a doctor within 24 hours"
+      }
+    ],
+    "urgency": "moderate",
+    "recommendedSpecialist": "General Physician",
+    "generalAdvice": "Rest and monitor symptoms"
+  }
+}
+```
+
+### GET `/ai-symptom-checker/history`
+
+**Description:** Get user's symptom analysis history  
+**Access:** Private  
+**Method:** GET
+
+### GET `/ai-symptom-checker/analysis/:id`
+
+**Description:** Get specific analysis  
+**Access:** Private  
+**Method:** GET  
+
+### GET `/ai-symptom-checker/symptoms-list`
+
+**Description:** Get common symptoms list  
+**Access:** Public  
+**Method:** GET  
+
+### GET `/ai-symptom-checker/specialists`
+
+**Description:** Get specialists list  
+**Access:** Public  
+**Method:** GET  
+
+### PUT `/ai-symptom-checker/analysis/:id/feedback`
+
+**Description:** Provide feedback on analysis  
+**Access:** Private  
+**Method:** PUT  
+
+### DELETE `/ai-symptom-checker/analysis/:id`
+
+**Description:** Delete analysis  
+**Access:** Private  
+**Method:** DELETE  
+
+---
+
+## 📈 Predictive Analytics System
+
+### GET `/predictive-analytics/no-show-prediction/:appointmentId`
+
+**Description:** Predict appointment no-show probability  
+**Access:** Private (Doctor/Admin)  
+**Method:** GET  
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "appointmentId": "appointment_id",
+    "noShowProbability": 25.5,
+    "riskLevel": "low",
+    "factors": {
+      "historicalNoShowRate": 10,
+      "leadTime": 7,
+      "timeOfDay": "morning",
+      "dayOfWeek": "Monday",
+      "paymentStatus": "paid"
+    },
+    "recommendation": "Send reminder 24 hours before"
+  }
+}
+```
+
+### GET `/predictive-analytics/revenue-forecast`
+
+**Description:** Forecast revenue for upcoming period  
+**Access:** Private (Admin)  
+**Method:** GET
+
+**Query Parameters:**
+
+- `period`: "week", "month", "quarter"
+
+### GET `/predictive-analytics/peak-hours`
+
+**Description:** Analyze peak appointment hours  
+**Access:** Private (Doctor/Admin)  
+**Method:** GET  
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "peakHour": {
+      "hour": 10,
+      "time": "10:00 - 11:00",
+      "appointmentCount": 25,
+      "revenue": 2500
+    },
+    "peakDay": {
+      "day": "Monday",
+      "appointmentCount": 45,
+      "revenue": 4500
+    },
+    "hourlyDistribution": [...],
+    "dailyDistribution": [...]
+  }
+}
+```
+
+### GET `/predictive-analytics/success-rate`
+
+**Description:** Calculate treatment success rate  
+**Access:** Private (Doctor/Admin)  
+**Method:** GET  
+
+### GET `/predictive-analytics/outbreak-detection`
+
+**Description:** Detect potential disease outbreaks  
+**Access:** Private (Admin)  
+**Method:** GET  
+
+### GET `/predictive-analytics/patient-retention`
+
+**Description:** Analyze patient retention  
+**Access:** Private (Admin)  
+**Method:** GET  
+
+### GET `/predictive-analytics/dashboard`
+
+**Description:** Get comprehensive analytics dashboard  
+**Access:** Private (Admin)  
+**Method:** GET  
+
+---
+
+## 🔒 RBAC & Security System
+
+### GET `/security/audit-logs`
+
+**Description:** Get audit logs  
+**Access:** Private (Admin only)  
+**Method:** GET
+
+**Query Parameters:**
+
+- `action`: Filter by action type
+- `userId`: Filter by user
+- `startDate`: Filter from date
+- `endDate`: Filter to date
+- `limit`: Results per page
+- `page`: Page number
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "logs": [
+      {
+        "_id": "log_id",
+        "user": "user_id",
+        "action": "LOGIN",
+        "resource": "/api/auth/login",
+        "timestamp": "2024-01-15T10:00:00.000Z",
+        "ipAddress": "192.168.1.1",
+        "userAgent": "Mozilla/5.0...",
+        "status": "success"
+      }
+    ],
+    "pagination": {
+      "total": 100,
+      "page": 1,
+      "pages": 10
+    }
+  }
+}
+```
+
+### GET `/security/audit-logs/user/:userId`
+
+**Description:** Get audit logs for specific user  
+**Access:** Private (Admin)  
+**Method:** GET  
+
+### GET `/security/audit-stats`
+
+**Description:** Get audit statistics  
+**Access:** Private (Admin)  
+**Method:** GET  
+
+### POST `/security/roles`
+
+**Description:** Create custom role  
+**Access:** Private (Admin)  
+**Method:** POST  
+
+**Request Body:**
+
+```json
+{
+  "name": "Senior Doctor",
+  "permissions": [
+    "view_all_patients",
+    "edit_medical_records",
+    "prescribe_medications",
+    "manage_appointments"
+  ],
+  "description": "Senior doctor with extended permissions"
+}
+```
+
+### GET `/security/roles`
+
+**Description:** Get all roles  
+**Access:** Private (Admin)  
+**Method:** GET  
+
+### PUT `/security/roles/:roleId`
+
+**Description:** Update role  
+**Access:** Private (Admin)  
+**Method:** PUT  
+
+### POST `/security/check-permission`
+
+**Description:** Check if user has permission  
+**Access:** Private  
+**Method:** POST  
+
+**Request Body:**
+
+```json
+{
+  "permission": "view_all_patients"
+}
+```
+
+### POST `/security/encrypt-data`
+
+**Description:** Encrypt sensitive data  
+**Access:** Private  
+**Method:** POST  
+
+**Request Body:**
+
+```json
+{
+  "data": "sensitive information"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "encrypted": "encrypted_string_here"
+}
+```
+
+### POST `/security/decrypt-data`
+
+**Description:** Decrypt sensitive data  
+**Access:** Private  
+**Method:** POST  
+
+### GET `/security/suspicious-activity`
+
+**Description:** Detect suspicious activity patterns  
+**Access:** Private (Admin)  
+**Method:** GET
+
+**Query Parameters:**
+
+- `days`: Number of days to analyze (default: 7)
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "period": "Last 7 days",
+    "totalAuditRecords": 5000,
+    "suspiciousPatterns": [
+      {
+        "type": "Multiple Failed Logins",
+        "severity": "high",
+        "userId": "user_id",
+        "count": 10,
+        "recommendation": "Consider locking account"
+      }
+    ],
+    "alertLevel": "MEDIUM"
+  }
+}
+```
+
+---
+
 ## 📚 Additional Resources
 
 - [API Testing Guide](./API_TESTING_GUIDE.md)
@@ -1128,6 +2216,56 @@ npm run test:coverage   # Run tests with coverage
 
 ---
 
+---
+
+## 📊 Review & Rating System Summary
+
+### Endpoints Count: 14 Total
+
+**Patient Operations (8):**
+
+- Create review
+- Get own reviews
+- Update own review
+- Delete own review
+- Get doctor reviews (public)
+- Vote on reviews (helpful/not helpful)
+- Flag inappropriate reviews
+- View review statistics
+
+**Doctor Operations (1):**
+
+- Respond to reviews
+
+**Admin Operations (3):**
+
+- Get all reviews for moderation
+- Moderate reviews (approve/reject/flag)
+- View overall review statistics
+
+**Utility Operations (2):**
+
+- Get review statistics for a doctor
+- Auto-moderation (flagging after 3 reports)
+
+### Key Features
+
+- ⭐ 5-star rating system with detailed sub-ratings
+- 💬 Written reviews with title and comment
+- ✅ Verified patient badges (completed appointments)
+- 👍 Helpful/not helpful voting system
+- 🏆 Top-rated doctor badges (4.5+ rating)
+- 📊 Rating breakdown visualization
+- 🚫 Admin moderation system
+- 🚩 Community flagging mechanism
+- 📝 Doctor response capability
+- ✏️ Edit and delete functionality
+- 🔄 Real-time rating calculations
+- 📈 Comprehensive analytics
+
+---
+
 **Last Updated:** November 5, 2025  
-**Version:** 1.0.0  
+**Version:** 2.0.0 (Added Review & Rating System)  
+**Total Endpoints:** 86 HTTP endpoints (72 existing + 14 new) + 8 Socket.io events  
 **Maintained by:** SmartCarePlus Development Team

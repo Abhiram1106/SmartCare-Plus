@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartCare+ Email Tester</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    h1 {
+      color: #2d3748;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+    
+    .subtitle {
+      color: #718096;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #4a5568;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: all 0.3s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 30px;
+    }
+    
+    button {
+      padding: 14px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn-otp {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-welcome {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+    
+    .btn-both {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+      grid-column: 1 / -1;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    
+    .result {
+      margin-top: 24px;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.6;
+      display: none;
+    }
+    
+    .result.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 2px solid #10b981;
+      display: block;
+    }
+    
+    .result.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 2px solid #ef4444;
+      display: block;
+    }
+    
+    .result strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .info-box {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 16px;
+      margin-top: 24px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #1e40af;
+      line-height: 1.6;
+    }
+    
+    .icon {
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📧 Email Testing Tool</h1>
+    <p class="subtitle">Test SmartCare+ email delivery in real-time</p>
+    
+    <div class="form-group">
+      <label for="email">Your Email Address *</label>
+      <input 
+        type="email" 
+        id="email" 
+        placeholder="your.email@example.com"
+        required
+      >
+    </div>
+    
+    <div class="form-group">
+      <label for="name">Your Name (Optional)</label>
+      <input 
+        type="text" 
+        id="name" 
+        placeholder="John Doe"
+      >
+    </div>
+    
+    <div class="button-group">
+      <button class="btn-otp" onclick="testEmail('otp')">
+        <span class="icon">🔐</span>
+        <span>Test OTP Email</span>
+      </button>
+      
+      <button class="btn-welcome" onclick="testEmail('welcome')">
+        <span class="icon">🎉</span>
+        <span>Test Welcome Email</span>
+      </button>
+      
+      <button class="btn-both" onclick="testEmail('both')">
+        <span class="icon">📨</span>
+        <span>Send Both Emails</span>
+      </button>
+    </div>
+    
+    <div class="result" id="result"></div>
+    
+    <div class="info-box">
+      <strong>ℹ️ Testing Tips:</strong>
+      <ul style="margin-left: 20px; margin-top: 8px;">
+        <li>Check your spam/junk folder if you don't see the email</li>
+        <li>Gmail might take 5-10 seconds to deliver</li>
+        <li>OTP test email will contain code: <strong>123456</strong></li>
+        <li>Welcome email will show test User ID: <strong>SMP9999</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000/api/test-email';
+    
+    async function testEmail(type) {
+      const emailInput = document.getElementById('email');
+      const nameInput = document.getElementById('name');
+      const resultDiv = document.getElementById('result');
+      const buttons = document.querySelectorAll('button');
+      
+      // Validate email
+      if (!emailInput.value || !emailInput.checkValidity()) {
+        showResult('error', '❌ Please enter a valid email address');
+        return;
+      }
+      
+      // Disable all buttons
+      buttons.forEach(btn => {
+        btn.disabled = true;
+        const text = btn.querySelector('span:last-child');
+        if (text) {
+          text.dataset.original = text.textContent;
+          text.innerHTML = '<span class="spinner"></span> Sending...';
+        }
+      });
+      
+      try {
+        const payload = {
+          email: emailInput.value,
+          name: nameInput.value || undefined
+        };
+        
+        const response = await fetch(`${API_BASE}/${type}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          let message = `✅ <strong>${data.message}</strong><br><br>`;
+          if (data.data) {
+            message += '📋 Details:<br>';
+            message += `• Email: ${data.data.email}<br>`;
+            if (data.data.name) message += `• Name: ${data.data.name}<br>`;
+            if (data.data.otp) message += `• OTP Code: ${data.data.otp}<br>`;
+            if (data.data.userId) message += `• User ID: ${data.data.userId}<br>`;
+            if (data.data.note) message += `<br>${data.data.note}`;
+          }
+          showResult('success', message);
+        } else {
+          showResult('error', `❌ <strong>Failed to send email</strong><br>${data.message || 'Unknown error'}`);
+        }
+      } catch (error) {
+        showResult('error', `❌ <strong>Network Error</strong><br>${error.message}<br><br>Make sure the backend server is running on port 5000`);
+      } finally {
+        // Re-enable all buttons
+        buttons.forEach(btn => {
+          btn.disabled = false;
+          const text = btn.querySelector('span:last-child');
+          if (text && text.dataset.original) {
+            text.textContent = text.dataset.original;
+          }
+        });
+      }
+    }
+    
+    function showResult(type, message) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.className = `result ${type}`;
+      resultDiv.innerHTML = message;
+      resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    // Allow Enter key to submit
+    document.getElementById('email').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') testEmail('both');
+    });
+    document.getElementById('name').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') testEmail('both');
+    });
+  </script>
+</body>
+</html>
