@@ -6,6 +6,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 const SocketManager = require('./socketManager');
+const VideoConsultationManager = require('./videoConsultationManager');
 
 const app = express();
 const server = http.createServer(app);
@@ -16,12 +17,14 @@ const io = new Server(server, {
   } 
 });
 
-// Initialize Socket Manager
+// Initialize Socket Manager and Video Consultation Manager
 const socketManager = new SocketManager(io);
+const videoConsultationManager = new VideoConsultationManager(io);
 
-// Make io and socketManager available to routes
+// Make io, socketManager, and videoConsultationManager available to routes
 app.set('io', io);
 app.set('socketManager', socketManager);
+app.set('videoConsultationManager', videoConsultationManager);
 
 // Middleware
 app.use(cors({
@@ -34,10 +37,11 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static test pages (DEV ONLY - remove in production)
 app.use('/test', express.static('tests'));
 
-// Attach socketManager to req object for all routes
+// Attach socketManager and videoConsultationManager to req object for all routes
 app.use((req, res, next) => {
   req.io = io;
   req.socketManager = socketManager;
+  req.videoConsultationManager = videoConsultationManager;
   next();
 });
 

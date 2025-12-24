@@ -19,6 +19,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import ToastContainer from '../../components/ToastContainer';
+import VideoRoom from '../../components/telemedicine/VideoRoom';
 
 const Telemedicine = () => {
   const { user } = useAuth();
@@ -71,12 +72,15 @@ const Telemedicine = () => {
     }
   };
 
-  const joinRoom = async (roomId) => {
+  const joinRoom = async (consultation) => {
     try {
-      const response = await api.post(`/telemedicine/room/${roomId}/join`);
-      setActiveRoom(response.data.data);
-      setMessages(response.data.data.chatMessages || []);
-      await startVideoCall();
+      const response = await api.post(`/telemedicine/room/${consultation.roomId}/join`);
+      setActiveRoom({
+        ...response.data.data,
+        consultationId: consultation._id,
+        roomId: consultation.roomId
+      });
+      setIsCallActive(true);
     } catch (error) {
       console.error('Error joining room:', error);
       showError('Failed to join consultation room');
@@ -206,151 +210,21 @@ const Telemedicine = () => {
     );
   }
 
-  // Active Call View
+  // Active Call View - Use VideoRoom component with WebRTC
   if (isCallActive && activeRoom) {
     return (
-      <div className="min-h-screen bg-gray-900">
-        <div className="h-screen flex">
-          {/* Video Area */}
-          <div className={`${showChat ? 'w-3/4' : 'w-full'} relative`}>
-            {/* Remote Video (Doctor) */}
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover bg-gray-800"
-            />
-            
-            {/* Local Video (Patient) - Picture in Picture */}
-            <div className="absolute top-4 right-4 w-64 h-48 bg-gray-800 rounded-lg overflow-hidden shadow-2xl border-2 border-white">
-              <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover"
-              />
-              {isVideoOff && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-700">
-                  <VideoOff className="w-12 h-12 text-gray-400" />
-                </div>
-              )}
-            </div>
-
-            {/* Doctor Info Overlay */}
-            <div className="absolute top-4 left-4 bg-black bg-opacity-50 rounded-lg p-4 text-white">
-              <div className="flex items-center space-x-3">
-                <User className="w-8 h-8" />
-                <div>
-                  <h3 className="font-semibold">Dr. {activeRoom.doctorId?.name}</h3>
-                  <p className="text-sm text-gray-300">{activeRoom.doctorId?.specialization}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Call Controls */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-              <div className="bg-black bg-opacity-70 rounded-full px-8 py-4 flex items-center space-x-6">
-                <button
-                  onClick={toggleMute}
-                  className={`p-4 rounded-full transition-all ${
-                    isMuted ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600'
-                  }`}
-                  title={isMuted ? 'Unmute' : 'Mute'}
-                >
-                  {isMuted ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}
-                </button>
-
-                <button
-                  onClick={toggleVideo}
-                  className={`p-4 rounded-full transition-all ${
-                    isVideoOff ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600'
-                  }`}
-                  title={isVideoOff ? 'Turn on video' : 'Turn off video'}
-                >
-                  {isVideoOff ? <VideoOff className="w-6 h-6 text-white" /> : <Video className="w-6 h-6 text-white" />}
-                </button>
-
-                <button
-                  onClick={endCall}
-                  className="p-4 bg-red-600 hover:bg-red-700 rounded-full transition-all"
-                  title="End call"
-                >
-                  <Phone className="w-6 h-6 text-white transform rotate-135" />
-                </button>
-
-                <button
-                  onClick={toggleScreenShare}
-                  className={`p-4 rounded-full transition-all ${
-                    isScreenSharing ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-700 hover:bg-gray-600'
-                  }`}
-                  title={isScreenSharing ? 'Stop sharing' : 'Share screen'}
-                >
-                  {isScreenSharing ? <MonitorOff className="w-6 h-6 text-white" /> : <Monitor className="w-6 h-6 text-white" />}
-                </button>
-
-                <button
-                  onClick={() => setShowChat(!showChat)}
-                  className="p-4 bg-gray-700 hover:bg-gray-600 rounded-full transition-all"
-                  title="Toggle chat"
-                >
-                  <MessageSquare className="w-6 h-6 text-white" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Chat Sidebar */}
-          {showChat && (
-            <div className="w-1/4 bg-white flex flex-col">
-              <div className="p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                <h3 className="font-semibold text-lg">Consultation Chat</h3>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${msg.senderId === user.id ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-xs px-4 py-2 rounded-lg ${
-                        msg.senderId === user.id
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-gray-800'
-                      }`}
-                    >
-                      <p className="text-sm">{msg.message}</p>
-                      <p className="text-xs mt-1 opacity-70">
-                        {new Date(msg.timestamp).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-4 border-t">
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Type a message..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <button
-                    onClick={sendMessage}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
-                  >
-                    <Send className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <VideoRoom
+        consultationId={activeRoom.consultationId}
+        roomId={activeRoom.roomId}
+        userId={user.id}
+        userName={user.name}
+        userRole="patient"
+        onLeave={() => {
+          setIsCallActive(false);
+          setActiveRoom(null);
+          fetchConsultations();
+        }}
+      />
     );
   }
 
@@ -435,7 +309,7 @@ const Telemedicine = () => {
 
                 {consultation.status === 'scheduled' && (
                   <button
-                    onClick={() => joinRoom(consultation.roomId)}
+                    onClick={() => joinRoom(consultation)}
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all font-semibold flex items-center justify-center space-x-2"
                   >
                     <Video className="w-5 h-5" />
@@ -445,7 +319,7 @@ const Telemedicine = () => {
 
                 {consultation.status === 'active' && (
                   <button
-                    onClick={() => joinRoom(consultation.roomId)}
+                    onClick={() => joinRoom(consultation)}
                     className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-3 rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all font-semibold flex items-center justify-center space-x-2 animate-pulse"
                   >
                     <Video className="w-5 h-5" />

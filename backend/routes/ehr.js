@@ -42,17 +42,42 @@ router.get('/:patientId', auth, async (req, res) => {
 router.put('/:patientId/basic', auth, async (req, res) => {
   try {
     const { patientId } = req.params;
-    const { bloodType, emergencyContact, insuranceInfo } = req.body;
+    const { bloodType, emergencyContact, insuranceInfo, height, weight } = req.body;
 
     if (req.user.id !== patientId && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    const medicalRecord = await MedicalRecord.findOneAndUpdate(
-      { patient: patientId },
-      { bloodType, emergencyContact, insuranceInfo },
-      { new: true, upsert: true }
-    );
+    let medicalRecord = await MedicalRecord.findOne({ patient: patientId });
+    
+    if (!medicalRecord) {
+      medicalRecord = new MedicalRecord({ patient: patientId });
+    }
+
+    // Update basic info
+    if (bloodType) medicalRecord.bloodType = bloodType;
+    if (emergencyContact) medicalRecord.emergencyContact = emergencyContact;
+    if (insuranceInfo) medicalRecord.insuranceInfo = insuranceInfo;
+    
+    // If height and weight provided, add to vital signs
+    if (height || weight) {
+      const currentHeight = height || (medicalRecord.vitalSigns.length > 0 ? 
+        medicalRecord.vitalSigns[medicalRecord.vitalSigns.length - 1].height : null);
+      const currentWeight = weight || (medicalRecord.vitalSigns.length > 0 ? 
+        medicalRecord.vitalSigns[medicalRecord.vitalSigns.length - 1].weight : null);
+      
+      const bmi = medicalRecord.calculateBMI(currentWeight, currentHeight);
+      
+      medicalRecord.vitalSigns.push({
+        height: currentHeight,
+        weight: currentWeight,
+        bmi,
+        recordedBy: req.user.id,
+        recordedDate: new Date()
+      });
+    }
+
+    await medicalRecord.save();
 
     res.json({
       success: true,
@@ -66,19 +91,24 @@ router.put('/:patientId/basic', auth, async (req, res) => {
 
 // @route   POST /api/ehr/:patientId/allergies
 // @desc    Add allergy to medical record
-// @access  Private (Doctor only)
-router.post('/:patientId/allergies', auth, authorize('doctor', 'admin'), async (req, res) => {
+// @access  Private (Patient, Doctor, or Admin)
+router.post('/:patientId/allergies', auth, async (req, res) => {
   try {
     const { patientId } = req.params;
     const { allergen, reaction, severity, diagnosedDate } = req.body;
+
+    // Authorization: patient can add to their own record
+    if (req.user.id !== patientId && req.user.role !== 'doctor' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
 
     if (!allergen || !reaction || !severity) {
       return res.status(400).json({ message: 'Please provide allergen, reaction, and severity' });
     }
 
-    const medicalRecord = await MedicalRecord.findOne({ patient: patientId });
+    let medicalRecord = await MedicalRecord.findOne({ patient: patientId });
     if (!medicalRecord) {
-      return res.status(404).json({ message: 'Medical record not found' });
+      medicalRecord = new MedicalRecord({ patient: patientId });
     }
 
     medicalRecord.allergies.push({ allergen, reaction, severity, diagnosedDate });
@@ -132,19 +162,24 @@ router.post('/:patientId/immunizations', auth, authorize('doctor', 'admin'), asy
 
 // @route   POST /api/ehr/:patientId/chronic-conditions
 // @desc    Add chronic condition
-// @access  Private (Doctor only)
-router.post('/:patientId/chronic-conditions', auth, authorize('doctor', 'admin'), async (req, res) => {
+// @access  Private (Patient, Doctor, or Admin)
+router.post('/:patientId/chronic-conditions', auth, async (req, res) => {
   try {
     const { patientId } = req.params;
     const { condition, diagnosedDate, status, medications, notes } = req.body;
+
+    // Authorization: patient can add to their own record
+    if (req.user.id !== patientId && req.user.role !== 'doctor' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
 
     if (!condition || !diagnosedDate) {
       return res.status(400).json({ message: 'Condition and diagnosed date are required' });
     }
 
-    const medicalRecord = await MedicalRecord.findOne({ patient: patientId });
+    let medicalRecord = await MedicalRecord.findOne({ patient: patientId });
     if (!medicalRecord) {
-      return res.status(404).json({ message: 'Medical record not found' });
+      medicalRecord = new MedicalRecord({ patient: patientId });
     }
 
     medicalRecord.chronicConditions.push({
@@ -208,15 +243,20 @@ router.post('/:patientId/lab-results', auth, authorize('doctor', 'admin'), async
 
 // @route   POST /api/ehr/:patientId/vitals
 // @desc    Record vital signs
-// @access  Private (Doctor/Nurse)
-router.post('/:patientId/vitals', auth, authorize('doctor', 'admin'), async (req, res) => {
+// @access  Private (Patient, Doctor, or Admin)
+router.post('/:patientId/vitals', auth, async (req, res) => {
   try {
     const { patientId } = req.params;
     const { bloodPressure, heartRate, temperature, respiratoryRate, oxygenSaturation, weight, height } = req.body;
 
-    const medicalRecord = await MedicalRecord.findOne({ patient: patientId });
+    // Authorization: patient can add to their own record
+    if (req.user.id !== patientId && req.user.role !== 'doctor' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    let medicalRecord = await MedicalRecord.findOne({ patient: patientId });
     if (!medicalRecord) {
-      return res.status(404).json({ message: 'Medical record not found' });
+      medicalRecord = new MedicalRecord({ patient: patientId });
     }
 
     const bmi = medicalRecord.calculateBMI(weight, height);
@@ -230,7 +270,8 @@ router.post('/:patientId/vitals', auth, authorize('doctor', 'admin'), async (req
       weight,
       height,
       bmi,
-      recordedBy: req.user.id
+      recordedBy: req.user.id,
+      recordedDate: new Date()
     });
     await medicalRecord.save();
 
@@ -245,20 +286,25 @@ router.post('/:patientId/vitals', auth, authorize('doctor', 'admin'), async (req
 });
 
 // @route   POST /api/ehr/:patientId/medications
-// @desc    Add medication to record
-// @access  Private (Doctor only)
-router.post('/:patientId/medications', auth, authorize('doctor', 'admin'), async (req, res) => {
+// @desc    Add medication to record (self-reported or prescribed)
+// @access  Private (Patient, Doctor, or Admin)
+router.post('/:patientId/medications', auth, async (req, res) => {
   try {
     const { patientId } = req.params;
     const { name, dosage, frequency, startDate, endDate } = req.body;
+
+    // Authorization: patient can add to their own record
+    if (req.user.id !== patientId && req.user.role !== 'doctor' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
 
     if (!name || !dosage || !frequency || !startDate) {
       return res.status(400).json({ message: 'Name, dosage, frequency, and start date are required' });
     }
 
-    const medicalRecord = await MedicalRecord.findOne({ patient: patientId });
+    let medicalRecord = await MedicalRecord.findOne({ patient: patientId });
     if (!medicalRecord) {
-      return res.status(404).json({ message: 'Medical record not found' });
+      medicalRecord = new MedicalRecord({ patient: patientId });
     }
 
     medicalRecord.medications.push({
@@ -267,7 +313,7 @@ router.post('/:patientId/medications', auth, authorize('doctor', 'admin'), async
       frequency,
       startDate,
       endDate,
-      prescribedBy: req.user.id,
+      prescribedBy: req.user.role === 'doctor' ? req.user.id : null,
       status: 'active'
     });
     await medicalRecord.save();

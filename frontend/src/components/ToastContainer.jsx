@@ -1,7 +1,12 @@
 import React from 'react';
 import Toast from './Toast';
 
-const ToastContainer = ({ toasts, removeToast }) => {
+const ToastContainer = ({ toasts = [], removeToast = () => {} }) => {
+  // Return null if no toasts to display
+  if (!toasts || toasts.length === 0) {
+    return null;
+  }
+
   return (
     <div className="fixed top-4 right-4 z-[9999] space-y-3">
       {toasts.map((toast) => (

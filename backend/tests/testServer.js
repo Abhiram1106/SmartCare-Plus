@@ -136,20 +136,36 @@ function parseTestResults() {
     const summary = cleanOutput.substring(summaryStart, summaryStart + 300);
     console.log('📄 Clean summary section:', summary.substring(0, 150));
     
-    // Parse Test Suites: "Test Suites: 1 passed, 1 total"
-    const suitesMatch = summary.match(/Test Suites:\s+(\d+)\s+passed,\s+(\d+)\s+total/);
-    if (suitesMatch) {
-      testResults.endpoint.stats.suites = parseInt(suitesMatch[1]);
-      console.log(`✅ Suites: ${suitesMatch[1]} passed, ${suitesMatch[2]} total`);
+    // Parse Test Suites - handles both patterns:
+    // "Test Suites: 1 passed, 1 total" (all passed)
+    // "Test Suites: 1 failed, 1 total" (with failures)
+    const suitesWithFailuresMatch = summary.match(/Test Suites:\s+(\d+)\s+failed,\s+(\d+)\s+total/);
+    const suitesAllPassedMatch = summary.match(/Test Suites:\s+(\d+)\s+passed,\s+(\d+)\s+total/);
+    
+    if (suitesWithFailuresMatch) {
+      testResults.endpoint.stats.suites = parseInt(suitesWithFailuresMatch[2]);
+      console.log(`✅ Suites: ${suitesWithFailuresMatch[1]} failed, ${suitesWithFailuresMatch[2]} total`);
+    } else if (suitesAllPassedMatch) {
+      testResults.endpoint.stats.suites = parseInt(suitesAllPassedMatch[2]);
+      console.log(`✅ Suites: ${suitesAllPassedMatch[1]} passed, ${suitesAllPassedMatch[2]} total`);
     }
     
-    // Parse Tests: "Tests:       124 passed, 124 total"
-    const testsMatch = summary.match(/Tests:\s+(\d+)\s+passed,\s+(\d+)\s+total/);
-    if (testsMatch) {
-      testResults.endpoint.stats.passed = parseInt(testsMatch[1]);
-      testResults.endpoint.stats.total = parseInt(testsMatch[2]);
-      testResults.endpoint.stats.failed = testResults.endpoint.stats.total - testResults.endpoint.stats.passed;
-      console.log(`✅ Tests: ${testsMatch[1]} passed, ${testsMatch[2]} total`);
+    // Parse Tests - handles both patterns:
+    // "Tests:       169 passed, 170 total" (all passed)
+    // "Tests:       1 failed, 169 passed, 170 total" (with failures)
+    const testsWithFailuresMatch = summary.match(/Tests:\s+(\d+)\s+failed,\s+(\d+)\s+passed,\s+(\d+)\s+total/);
+    const testsAllPassedMatch = summary.match(/Tests:\s+(\d+)\s+passed,\s+(\d+)\s+total/);
+    
+    if (testsWithFailuresMatch) {
+      testResults.endpoint.stats.failed = parseInt(testsWithFailuresMatch[1]);
+      testResults.endpoint.stats.passed = parseInt(testsWithFailuresMatch[2]);
+      testResults.endpoint.stats.total = parseInt(testsWithFailuresMatch[3]);
+      console.log(`✅ Tests: ${testsWithFailuresMatch[1]} failed, ${testsWithFailuresMatch[2]} passed, ${testsWithFailuresMatch[3]} total`);
+    } else if (testsAllPassedMatch) {
+      testResults.endpoint.stats.passed = parseInt(testsAllPassedMatch[1]);
+      testResults.endpoint.stats.total = parseInt(testsAllPassedMatch[2]);
+      testResults.endpoint.stats.failed = 0;
+      console.log(`✅ Tests: ${testsAllPassedMatch[1]} passed, ${testsAllPassedMatch[2]} total`);
     } else {
       console.log('⚠️  Could not parse tests');
     }

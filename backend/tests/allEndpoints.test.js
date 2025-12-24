@@ -39,6 +39,7 @@ const telemedicineRoutes = require('../routes/telemedicine');
 const aiSymptomCheckerRoutes = require('../routes/aiSymptomChecker');
 const predictiveAnalyticsRoutes = require('../routes/predictiveAnalytics');
 const securityRoutes = require('../routes/security');
+const analyticsRoutes = require('../routes/analytics');
 
 // Middleware
 const { auth, authorize } = require('../middleware/auth');
@@ -118,6 +119,7 @@ describe('SmartCarePlus API Endpoints - Complete Test Suite', () => {
     app.use('/api/ai-symptom-checker', aiSymptomCheckerRoutes);
     app.use('/api/predictive-analytics', predictiveAnalyticsRoutes);
     app.use('/api/security', securityRoutes);
+    app.use('/api/analytics', analyticsRoutes);
 
     // Error handling middleware
     app.use((err, req, res, next) => {
@@ -2524,6 +2526,692 @@ describe('SmartCarePlus API Endpoints - Complete Test Suite', () => {
         expect(response.body.success).toBe(true);
         expect(response.body.data).toHaveProperty('suspiciousPatterns');
         expect(response.body.data).toHaveProperty('alertLevel');
+      });
+    });
+  });
+
+  describe('Analytics Endpoints', () => {
+    beforeEach(async () => {
+      // Create sample data for analytics testing
+      const appointment = await new Appointment(createValidAppointment(patientId, doctorId, { 
+        status: 'completed' 
+      })).save();
+
+      await new Payment({
+        appointment: appointment._id,
+        patient: patientId,
+        amount: 100,
+        paymentMethod: 'upi',
+        transactionId: `TXN_ANALYTICS_${Date.now()}`,
+        status: 'completed'
+      }).save();
+    });
+
+    describe('GET /api/analytics/revenue', () => {
+      it('should get revenue analytics for admin', async () => {
+        const response = await request(app)
+          .get('/api/analytics/revenue?period=monthly')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('period');
+        expect(response.body).toHaveProperty('data');
+        expect(response.body).toHaveProperty('totalRevenue');
+        expect(Array.isArray(response.body.data)).toBe(true);
+      });
+
+      it('should support daily period', async () => {
+        const response = await request(app)
+          .get('/api/analytics/revenue?period=daily')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body.period).toBe('daily');
+        expect(Array.isArray(response.body.data)).toBe(true);
+      });
+
+      it('should support weekly period', async () => {
+        const response = await request(app)
+          .get('/api/analytics/revenue?period=weekly')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body.period).toBe('weekly');
+      });
+
+      it('should support custom date range', async () => {
+        const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const endDate = new Date().toISOString();
+
+        const response = await request(app)
+          .get(`/api/analytics/revenue?startDate=${startDate}&endDate=${endDate}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('startDate');
+        expect(response.body).toHaveProperty('endDate');
+      });
+
+      it('should prevent non-admin access', async () => {
+        await request(app)
+          .get('/api/analytics/revenue')
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(403);
+      });
+    });
+
+    describe('GET /api/analytics/appointments', () => {
+      it('should get appointment analytics for admin', async () => {
+        const response = await request(app)
+          .get('/api/analytics/appointments?period=monthly')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('period');
+        expect(response.body).toHaveProperty('trends');
+        expect(response.body).toHaveProperty('statusBreakdown');
+        expect(Array.isArray(response.body.trends)).toBe(true);
+        expect(Array.isArray(response.body.statusBreakdown)).toBe(true);
+      });
+
+      it('should allow doctor to view their appointment analytics', async () => {
+        const response = await request(app)
+          .get('/api/analytics/appointments')
+          .set('Authorization', `Bearer ${doctorToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('trends');
+        expect(response.body).toHaveProperty('statusBreakdown');
+      });
+
+      it('should support daily period', async () => {
+        const response = await request(app)
+          .get('/api/analytics/appointments?period=daily')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body.period).toBe('daily');
+      });
+
+      it('should support weekly period', async () => {
+        const response = await request(app)
+          .get('/api/analytics/appointments?period=weekly')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body.period).toBe('weekly');
+      });
+    });
+
+    describe('GET /api/analytics/peak-hours', () => {
+      it('should get peak hours heatmap for admin', async () => {
+        const response = await request(app)
+          .get('/api/analytics/peak-hours')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('heatmapData');
+        expect(response.body).toHaveProperty('dayNames');
+        expect(response.body).toHaveProperty('peakHours');
+        expect(Array.isArray(response.body.heatmapData)).toBe(true);
+        expect(response.body.dayNames.length).toBe(7);
+      });
+
+      it('should allow doctor to view their peak hours', async () => {
+        const response = await request(app)
+          .get('/api/analytics/peak-hours')
+          .set('Authorization', `Bearer ${doctorToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('heatmapData');
+        expect(response.body).toHaveProperty('peakHours');
+      });
+
+      it('should require authentication', async () => {
+        await request(app)
+          .get('/api/analytics/peak-hours')
+          .expect(401);
+      });
+    });
+
+    describe('GET /api/analytics/doctor-performance', () => {
+      it('should get doctor performance leaderboard for admin', async () => {
+        const response = await request(app)
+          .get('/api/analytics/doctor-performance')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('leaderboard');
+        expect(response.body).toHaveProperty('allPerformance');
+        expect(response.body).toHaveProperty('aggregateStats');
+        expect(Array.isArray(response.body.leaderboard)).toBe(true);
+        expect(Array.isArray(response.body.allPerformance)).toBe(true);
+        expect(response.body.aggregateStats).toHaveProperty('totalDoctors');
+        expect(response.body.aggregateStats).toHaveProperty('totalAppointments');
+        expect(response.body.aggregateStats).toHaveProperty('totalRevenue');
+      });
+
+      it('should support custom limit', async () => {
+        const response = await request(app)
+          .get('/api/analytics/doctor-performance?limit=5')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body.leaderboard.length).toBeLessThanOrEqual(5);
+      });
+
+      it('should support date range filtering', async () => {
+        const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const endDate = new Date().toISOString();
+
+        const response = await request(app)
+          .get(`/api/analytics/doctor-performance?startDate=${startDate}&endDate=${endDate}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('startDate');
+        expect(response.body).toHaveProperty('endDate');
+      });
+
+      it('should prevent non-admin access', async () => {
+        await request(app)
+          .get('/api/analytics/doctor-performance')
+          .set('Authorization', `Bearer ${doctorToken}`)
+          .expect(403);
+      });
+    });
+
+    describe('GET /api/analytics/payment-success-rate', () => {
+      it('should get payment analytics for admin', async () => {
+        const response = await request(app)
+          .get('/api/analytics/payment-success-rate')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('statusBreakdown');
+        expect(response.body).toHaveProperty('methodBreakdown');
+        expect(response.body).toHaveProperty('dailyTrend');
+        expect(response.body).toHaveProperty('successRate');
+        expect(response.body).toHaveProperty('totalPayments');
+        expect(response.body).toHaveProperty('completedPayments');
+        expect(Array.isArray(response.body.statusBreakdown)).toBe(true);
+        expect(Array.isArray(response.body.methodBreakdown)).toBe(true);
+        expect(Array.isArray(response.body.dailyTrend)).toBe(true);
+      });
+
+      it('should support date range filtering', async () => {
+        const startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const endDate = new Date().toISOString();
+
+        const response = await request(app)
+          .get(`/api/analytics/payment-success-rate?startDate=${startDate}&endDate=${endDate}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('startDate');
+        expect(response.body).toHaveProperty('endDate');
+      });
+
+      it('should prevent non-admin access', async () => {
+        await request(app)
+          .get('/api/analytics/payment-success-rate')
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(403);
+      });
+    });
+
+    describe('GET /api/analytics/cancellation-analysis', () => {
+      it('should get cancellation analytics for admin', async () => {
+        const response = await request(app)
+          .get('/api/analytics/cancellation-analysis')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('cancellationRate');
+        expect(response.body).toHaveProperty('totalAppointments');
+        expect(response.body).toHaveProperty('cancelledAppointments');
+        expect(response.body).toHaveProperty('trend');
+        expect(response.body).toHaveProperty('reasons');
+        expect(Array.isArray(response.body.trend)).toBe(true);
+        expect(Array.isArray(response.body.reasons)).toBe(true);
+      });
+
+      it('should allow doctor to view their cancellation analytics', async () => {
+        const response = await request(app)
+          .get('/api/analytics/cancellation-analysis')
+          .set('Authorization', `Bearer ${doctorToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('cancellationRate');
+        expect(response.body).toHaveProperty('trend');
+      });
+
+      it('should support date range filtering', async () => {
+        const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const endDate = new Date().toISOString();
+
+        const response = await request(app)
+          .get(`/api/analytics/cancellation-analysis?startDate=${startDate}&endDate=${endDate}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('startDate');
+        expect(response.body).toHaveProperty('endDate');
+      });
+    });
+
+    describe('GET /api/analytics/comparison', () => {
+      it('should get monthly and quarterly comparison for admin', async () => {
+        const response = await request(app)
+          .get('/api/analytics/comparison')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('monthly');
+        expect(response.body).toHaveProperty('quarterly');
+        
+        // Monthly comparison
+        expect(response.body.monthly).toHaveProperty('current');
+        expect(response.body.monthly).toHaveProperty('previous');
+        expect(response.body.monthly).toHaveProperty('growth');
+        expect(response.body.monthly.current).toHaveProperty('period');
+        expect(response.body.monthly.current).toHaveProperty('appointments');
+        expect(response.body.monthly.current).toHaveProperty('revenue');
+        expect(response.body.monthly.current).toHaveProperty('patients');
+        expect(response.body.monthly.growth).toHaveProperty('appointments');
+        expect(response.body.monthly.growth).toHaveProperty('revenue');
+        expect(response.body.monthly.growth).toHaveProperty('patients');
+        
+        // Quarterly comparison
+        expect(response.body.quarterly).toHaveProperty('current');
+        expect(response.body.quarterly).toHaveProperty('previous');
+        expect(response.body.quarterly).toHaveProperty('growth');
+      });
+
+      it('should prevent non-admin access', async () => {
+        await request(app)
+          .get('/api/analytics/comparison')
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(403);
+      });
+    });
+
+    describe('GET /api/analytics/patient-stats', () => {
+      it('should get patient personal analytics', async () => {
+        const response = await request(app)
+          .get('/api/analytics/patient-stats')
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('appointmentTrend');
+        expect(response.body).toHaveProperty('spendingAnalysis');
+        expect(response.body).toHaveProperty('topSpecializations');
+        expect(Array.isArray(response.body.appointmentTrend)).toBe(true);
+        expect(Array.isArray(response.body.spendingAnalysis)).toBe(true);
+        expect(Array.isArray(response.body.topSpecializations)).toBe(true);
+      });
+
+      it('should support date range filtering', async () => {
+        const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+        const endDate = new Date().toISOString();
+
+        const response = await request(app)
+          .get(`/api/analytics/patient-stats?startDate=${startDate}&endDate=${endDate}`)
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty('appointmentTrend');
+      });
+
+      it('should prevent non-patient access', async () => {
+        await request(app)
+          .get('/api/analytics/patient-stats')
+          .set('Authorization', `Bearer ${doctorToken}`)
+          .expect(403);
+      });
+
+      it('should require authentication', async () => {
+        await request(app)
+          .get('/api/analytics/patient-stats')
+          .expect(401);
+      });
+    });
+  });
+
+  describe('Chat Endpoints', () => {
+    let appointmentForChat, chatMessageId;
+
+    beforeEach(async () => {
+      // Clean up chat messages
+      await ChatMessage.deleteMany({});
+      
+      // Create an appointment so patient and doctor can chat
+      appointmentForChat = await new Appointment(createValidAppointment(patientId, doctorId)).save();
+    });
+
+    describe('POST /api/chat/send', () => {
+      it('should send chat message between patient and doctor', async () => {
+        const response = await request(app)
+          .post('/api/chat/send')
+          .set('Authorization', `Bearer ${patientToken}`)
+          .send({
+            receiverId: doctorId,
+            message: 'Hello Doctor, I have a question about my prescription',
+            senderName: 'Test Patient',
+            receiverName: 'Dr. Test Doctor'
+          })
+          .expect(201);
+
+        expect(response.body.message).toBe('Hello Doctor, I have a question about my prescription');
+        expect(response.body.senderId).toBe(patientId.toString());
+        expect(response.body.receiverId).toBe(doctorId.toString());
+        expect(response.body.read).toBe(false);
+        chatMessageId = response.body._id;
+      });
+
+      it('should prevent chat without appointment relationship', async () => {
+        // Create another doctor without appointment with patient
+        const otherDoctor = await User.create({
+          name: 'Dr. Other Doctor',
+          email: 'otherdoctor@test.com',
+          password: 'password123',
+          phone: '+9999999999',
+          role: 'doctor',
+          specialization: 'Dermatology',
+          consultationFee: 150
+        });
+
+        await request(app)
+          .post('/api/chat/send')
+          .set('Authorization', `Bearer ${patientToken}`)
+          .send({
+            receiverId: otherDoctor._id,
+            message: 'Hello',
+            senderName: 'Test Patient'
+          })
+          .expect(403);
+      });
+
+      it('should require message and receiverId', async () => {
+        await request(app)
+          .post('/api/chat/send')
+          .set('Authorization', `Bearer ${patientToken}`)
+          .send({
+            receiverId: doctorId
+            // Missing message
+          })
+          .expect(400);
+      });
+
+      it('should require authentication', async () => {
+        await request(app)
+          .post('/api/chat/send')
+          .send({
+            receiverId: doctorId,
+            message: 'Hello'
+          })
+          .expect(401);
+      });
+    });
+
+    describe('GET /api/chat/messages/:userId', () => {
+      beforeEach(async () => {
+        // Create some chat messages
+        await ChatMessage.create([
+          {
+            senderId: patientId,
+            receiverId: doctorId,
+            message: 'Hello Doctor',
+            senderName: 'Test Patient',
+            receiverName: 'Dr. Test Doctor',
+            read: false
+          },
+          {
+            senderId: doctorId,
+            receiverId: patientId,
+            message: 'Hello Patient, how can I help?',
+            senderName: 'Dr. Test Doctor',
+            receiverName: 'Test Patient',
+            read: false
+          }
+        ]);
+      });
+
+      it('should get chat messages between patient and doctor', async () => {
+        const response = await request(app)
+          .get(`/api/chat/messages/${doctorId}`)
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(200);
+
+        expect(Array.isArray(response.body)).toBe(true);
+        expect(response.body.length).toBe(2);
+        expect(response.body[0].message).toBe('Hello Doctor');
+        expect(response.body[1].message).toBe('Hello Patient, how can I help?');
+      });
+
+      it('should prevent access without appointment relationship', async () => {
+        const otherDoctor = await User.create({
+          name: 'Dr. Another Doctor',
+          email: 'anotherdoctor@test.com',
+          password: 'password123',
+          phone: '+8888888888',
+          role: 'doctor',
+          specialization: 'Psychiatry',
+          consultationFee: 200
+        });
+
+        await request(app)
+          .get(`/api/chat/messages/${otherDoctor._id}`)
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(403);
+      });
+
+      it('should require authentication', async () => {
+        await request(app)
+          .get(`/api/chat/messages/${doctorId}`)
+          .expect(401);
+      });
+    });
+
+    describe('PUT /api/chat/mark-read/:messageId', () => {
+      beforeEach(async () => {
+        const message = await ChatMessage.create({
+          senderId: doctorId,
+          receiverId: patientId,
+          message: 'Test message',
+          senderName: 'Dr. Test Doctor',
+          receiverName: 'Test Patient',
+          read: false
+        });
+        chatMessageId = message._id;
+      });
+
+      it('should mark message as read', async () => {
+        const response = await request(app)
+          .put(`/api/chat/mark-read/${chatMessageId}`)
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(200);
+
+        expect(response.body.read).toBe(true);
+        expect(response.body.readAt).toBeDefined();
+      });
+
+      it('should return 404 for non-existent message', async () => {
+        const fakeId = new mongoose.Types.ObjectId();
+        await request(app)
+          .put(`/api/chat/mark-read/${fakeId}`)
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(404);
+      });
+
+      it('should require authentication', async () => {
+        await request(app)
+          .put(`/api/chat/mark-read/${chatMessageId}`)
+          .expect(401);
+      });
+    });
+
+    describe('PUT /api/chat/mark-all-read/:userId', () => {
+      beforeEach(async () => {
+        // Create multiple unread messages
+        await ChatMessage.create([
+          {
+            senderId: doctorId,
+            receiverId: patientId,
+            message: 'Message 1',
+            senderName: 'Dr. Test Doctor',
+            receiverName: 'Test Patient',
+            read: false
+          },
+          {
+            senderId: doctorId,
+            receiverId: patientId,
+            message: 'Message 2',
+            senderName: 'Dr. Test Doctor',
+            receiverName: 'Test Patient',
+            read: false
+          },
+          {
+            senderId: doctorId,
+            receiverId: patientId,
+            message: 'Message 3',
+            senderName: 'Dr. Test Doctor',
+            receiverName: 'Test Patient',
+            read: false
+          }
+        ]);
+      });
+
+      it('should mark all messages from a user as read', async () => {
+        const response = await request(app)
+          .put(`/api/chat/mark-all-read/${doctorId}`)
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(200);
+
+        expect(response.body.message).toBe('All messages marked as read');
+
+        // Verify all messages are marked as read
+        const messages = await ChatMessage.find({
+          senderId: doctorId,
+          receiverId: patientId
+        });
+        messages.forEach(msg => {
+          expect(msg.read).toBe(true);
+        });
+      });
+
+      it('should prevent marking messages without appointment relationship', async () => {
+        const otherDoctor = await User.create({
+          name: 'Dr. Yet Another Doctor',
+          email: 'yetanotherdoctor@test.com',
+          password: 'password123',
+          phone: '+7777777777',
+          role: 'doctor',
+          specialization: 'Ophthalmology',
+          consultationFee: 180
+        });
+
+        await request(app)
+          .put(`/api/chat/mark-all-read/${otherDoctor._id}`)
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(403);
+      });
+
+      it('should require authentication', async () => {
+        await request(app)
+          .put(`/api/chat/mark-all-read/${doctorId}`)
+          .expect(401);
+      });
+    });
+
+    describe('GET /api/chat/conversations', () => {
+      beforeEach(async () => {
+        // Create messages with doctor
+        await ChatMessage.create({
+          senderId: patientId,
+          receiverId: doctorId,
+          message: 'Recent message to doctor',
+          senderName: 'Test Patient',
+          receiverName: 'Dr. Test Doctor'
+        });
+      });
+
+      it('should get all conversations for user', async () => {
+        const response = await request(app)
+          .get('/api/chat/conversations')
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(200);
+
+        expect(Array.isArray(response.body)).toBe(true);
+        expect(response.body.length).toBeGreaterThan(0);
+        expect(response.body[0]).toHaveProperty('lastMessage');
+        expect(response.body[0]).toHaveProperty('lastMessageTime');
+        expect(response.body[0]).toHaveProperty('otherUserName');
+      });
+
+      it('should sort conversations by last message time', async () => {
+        const response = await request(app)
+          .get('/api/chat/conversations')
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(200);
+
+        if (response.body.length > 1) {
+          const firstTime = new Date(response.body[0].lastMessageTime);
+          const secondTime = new Date(response.body[1].lastMessageTime);
+          expect(firstTime >= secondTime).toBe(true);
+        }
+      });
+
+      it('should require authentication', async () => {
+        await request(app)
+          .get('/api/chat/conversations')
+          .expect(401);
+      });
+    });
+
+    describe('DELETE /api/chat/conversation/:userId', () => {
+      beforeEach(async () => {
+        // Create some messages
+        await ChatMessage.create([
+          {
+            senderId: patientId,
+            receiverId: doctorId,
+            message: 'Message 1',
+            senderName: 'Test Patient',
+            receiverName: 'Dr. Test Doctor'
+          },
+          {
+            senderId: doctorId,
+            receiverId: patientId,
+            message: 'Message 2',
+            senderName: 'Dr. Test Doctor',
+            receiverName: 'Test Patient'
+          }
+        ]);
+      });
+
+      it('should delete entire conversation', async () => {
+        const response = await request(app)
+          .delete(`/api/chat/conversation/${doctorId}`)
+          .set('Authorization', `Bearer ${patientToken}`)
+          .expect(200);
+
+        expect(response.body.message).toBe('Conversation deleted successfully');
+
+        // Verify messages are deleted
+        const messages = await ChatMessage.find({
+          $or: [
+            { senderId: patientId, receiverId: doctorId },
+            { senderId: doctorId, receiverId: patientId }
+          ]
+        });
+        expect(messages.length).toBe(0);
+      });
+
+      it('should require authentication', async () => {
+        await request(app)
+          .delete(`/api/chat/conversation/${doctorId}`)
+          .expect(401);
       });
     });
   });

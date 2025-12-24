@@ -558,7 +558,8 @@ const SecurityAuditLogs = () => {
             </div>
           </div>
         </div>
-        ) : (
+        )
+        : (
           <div className="bg-white rounded-xl shadow-lg p-12 text-center">
             <Shield className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-2xl font-semibold text-gray-700 mb-2">No Security Data Available</h3>

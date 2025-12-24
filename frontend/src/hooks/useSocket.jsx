@@ -1,7 +1,9 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Use VITE_SOCKET_URL or fallback to base URL without /api path
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 
+                   (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace('/api', '');
 
 let socket = null;
 
@@ -15,13 +17,21 @@ export const useSocket = (user) => {
 
     // Create socket connection if it doesn't exist
     if (!socket) {
-      socket = io(SOCKET_URL, {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        reconnectionAttempts: 5
-      });
+      try {
+        socket = io(SOCKET_URL, {
+          path: '/socket.io',
+          transports: ['websocket', 'polling'],
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          reconnectionAttempts: 5,
+          autoConnect: true,
+          forceNew: false
+        });
+      } catch (error) {
+        console.error('Failed to initialize socket:', error);
+        return;
+      }
 
       // Connection event handlers
       socket.on('connect', () => {

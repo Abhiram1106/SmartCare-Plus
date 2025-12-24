@@ -278,11 +278,6 @@ export const trainModel = async (intents, onProgress) => {
       validationSplit: 0.15, // Reduced validation split
       shuffle: true,
       callbacks: {
-        onEpochEnd: (epoch, logs) => {
-          if (onProgress) {
-            onProgress(epoch, logs);
-          }
-        },
         // Early stopping for even faster training if accuracy is good
         onEpochEnd: async (epoch, logs) => {
           if (onProgress) {

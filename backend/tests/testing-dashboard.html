@@ -900,6 +900,18 @@
             font-size: 0.95rem;
         }
 
+        /* Video Test Group Styles */
+        .video-test-group {
+            background: rgba(20, 24, 36, 0.4);
+            border: 1px solid rgba(79, 70, 229, 0.1);
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .video-test-group h3 {
+            margin: 0 0 12px 0;
+        }
+
         /* Toast Notifications */
         .toast-container {
             position: fixed;
@@ -1080,6 +1092,9 @@
             <button class="tab-btn" onclick="switchTab('email')">
                 📧 Email Tests
             </button>
+            <button class="tab-btn" onclick="switchTab('video')">
+                🎥 Video Consultation
+            </button>
         </div>
 
         <!-- Main Content -->
@@ -1206,6 +1221,169 @@
                             <h3>📨 Email Test Results</h3>
                             <div class="results-content" id="email-results">
                                 <div class="email-empty">No email tests run yet. Send a test email to see results.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Consultation Tab -->
+            <div id="video-tab" class="tab-content">
+                <div class="dashboard-grid">
+                    <div class="left-panel">
+                        <!-- Video Stats -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">🎥</div>
+                                <div class="stat-label">Active Rooms</div>
+                                <div class="stat-value" id="active-rooms">0</div>
+                            </div>
+                            <div class="stat-card success">
+                                <div class="stat-icon">👥</div>
+                                <div class="stat-label">Participants</div>
+                                <div class="stat-value" id="total-participants">0</div>
+                            </div>
+                            <div class="stat-card info">
+                                <div class="stat-icon">⚡</div>
+                                <div class="stat-label">Socket Status</div>
+                                <div class="stat-value" id="socket-status">Disconnected</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">📊</div>
+                                <div class="stat-label">Messages</div>
+                                <div class="stat-value" id="chat-messages">0</div>
+                            </div>
+                        </div>
+
+                        <!-- Video Test Section -->
+                        <div class="email-test-section">
+                            <h2 class="email-section-title">🎥 Video Consultation Testing</h2>
+                            
+                            <!-- Connection Test -->
+                            <div class="video-test-group">
+                                <h3 style="color: var(--text); font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <span>🔌</span> Connection Test
+                                </h3>
+                                <div class="email-action-buttons">
+                                    <button class="email-btn email-btn-otp" onclick="testSocketConnection()">
+                                        <div class="email-btn-icon">🔗</div>
+                                        <div class="email-btn-content">
+                                            <div class="email-btn-title">Test Socket.io</div>
+                                            <div class="email-btn-subtitle">WebSocket connection</div>
+                                        </div>
+                                    </button>
+                                    <button class="email-btn email-btn-welcome" onclick="testWebRTC()">
+                                        <div class="email-btn-icon">📡</div>
+                                        <div class="email-btn-content">
+                                            <div class="email-btn-title">Test WebRTC</div>
+                                            <div class="email-btn-subtitle">Camera & microphone</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Room Test -->
+                            <div class="video-test-group" style="margin-top: 20px;">
+                                <h3 style="color: var(--text); font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <span>🚪</span> Room Management
+                                </h3>
+                                <form class="email-form-grid">
+                                    <div class="form-group">
+                                        <label for="room-id">🏠 Room ID</label>
+                                        <input type="text" id="room-id" placeholder="test-room-001" value="test-room-001">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="user-name">👤 User Name</label>
+                                        <input type="text" id="user-name" placeholder="Test User" value="Test User">
+                                    </div>
+                                </form>
+                                <div class="email-action-buttons">
+                                    <button class="email-btn email-btn-otp" onclick="joinTestRoom()">
+                                        <div class="email-btn-icon">➡️</div>
+                                        <div class="email-btn-content">
+                                            <div class="email-btn-title">Join Room</div>
+                                            <div class="email-btn-subtitle">Connect to video room</div>
+                                        </div>
+                                    </button>
+                                    <button class="email-btn email-btn-welcome" onclick="leaveTestRoom()">
+                                        <div class="email-btn-icon">⬅️</div>
+                                        <div class="email-btn-content">
+                                            <div class="email-btn-title">Leave Room</div>
+                                            <div class="email-btn-subtitle">Disconnect from room</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Signaling Test -->
+                            <div class="video-test-group" style="margin-top: 20px;">
+                                <h3 style="color: var(--text); font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <span>📡</span> Signaling Test
+                                </h3>
+                                <div class="email-action-buttons">
+                                    <button class="email-btn email-btn-otp" onclick="testOffer()">
+                                        <div class="email-btn-icon">📤</div>
+                                        <div class="email-btn-content">
+                                            <div class="email-btn-title">Send Offer</div>
+                                            <div class="email-btn-subtitle">WebRTC offer signal</div>
+                                        </div>
+                                    </button>
+                                    <button class="email-btn email-btn-welcome" onclick="testAnswer()">
+                                        <div class="email-btn-icon">📥</div>
+                                        <div class="email-btn-content">
+                                            <div class="email-btn-title">Send Answer</div>
+                                            <div class="email-btn-subtitle">WebRTC answer signal</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Feature Test -->
+                            <div class="video-test-group" style="margin-top: 20px;">
+                                <h3 style="color: var(--text); font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <span>🎬</span> Feature Test
+                                </h3>
+                                <div class="email-action-buttons">
+                                    <button class="email-btn email-btn-otp" onclick="testToggleAudio()">
+                                        <div class="email-btn-icon">🎤</div>
+                                        <div class="email-btn-content">
+                                            <div class="email-btn-title">Toggle Audio</div>
+                                            <div class="email-btn-subtitle">Mute/unmute test</div>
+                                        </div>
+                                    </button>
+                                    <button class="email-btn email-btn-welcome" onclick="testToggleVideo()">
+                                        <div class="email-btn-icon">📹</div>
+                                        <div class="email-btn-content">
+                                            <div class="email-btn-title">Toggle Video</div>
+                                            <div class="email-btn-subtitle">Camera on/off test</div>
+                                        </div>
+                                    </button>
+                                </div>
+                                <div class="email-action-buttons" style="margin-top: 12px;">
+                                    <button class="email-btn email-btn-otp" onclick="testScreenShare()">
+                                        <div class="email-btn-icon">🖥️</div>
+                                        <div class="email-btn-content">
+                                            <div class="email-btn-title">Screen Share</div>
+                                            <div class="email-btn-subtitle">Share screen test</div>
+                                        </div>
+                                    </button>
+                                    <button class="email-btn email-btn-welcome" onclick="testChatMessage()">
+                                        <div class="email-btn-icon">💬</div>
+                                        <div class="email-btn-content">
+                                            <div class="email-btn-title">Send Message</div>
+                                            <div class="email-btn-subtitle">Chat message test</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="right-panel">
+                        <div class="results-panel">
+                            <h3>📊 Video Test Results</h3>
+                            <div class="results-content" id="video-results" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+                                <div class="email-empty">Click a test button to start testing video consultation features</div>
                             </div>
                         </div>
                     </div>
@@ -1518,10 +1696,400 @@
             }
         }
 
+        // Video Consultation Testing Functions
+        let testSocket = null;
+        let testStream = null;
+        let isInRoom = false;
+        let audioEnabled = true;
+        let videoEnabled = true;
+
+        function addVideoResult(title, status, message, details = {}) {
+            const resultsDiv = document.getElementById('video-results');
+            
+            // Remove empty message if it exists
+            const emptyMsg = resultsDiv.querySelector('.email-empty');
+            if (emptyMsg) emptyMsg.remove();
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const resultCard = document.createElement('div');
+            resultCard.className = `email-result-card ${status}`;
+            resultCard.style.marginBottom = '12px';
+            
+            let detailsHTML = '';
+            for (const [key, value] of Object.entries(details)) {
+                detailsHTML += `<div><strong>${key}:</strong> ${value}</div>`;
+            }
+            
+            resultCard.innerHTML = `
+                <div class="email-result-header">
+                    <span class="email-result-type">${title}</span>
+                    <span class="email-result-time">${timestamp}</span>
+                </div>
+                <div class="email-result-details">
+                    <div><strong>Status:</strong> <span style="color: ${status === 'success' ? 'var(--success)' : 'var(--danger)'}">${status.toUpperCase()}</span></div>
+                    <div><strong>Message:</strong> ${message}</div>
+                    ${detailsHTML}
+                </div>
+            `;
+            
+            resultsDiv.insertBefore(resultCard, resultsDiv.firstChild);
+            
+            // Show toast
+            showToast(status, title, message);
+        }
+
+        async function testSocketConnection() {
+            try {
+                // Test if Socket.io script is loaded
+                if (typeof io === 'undefined') {
+                    // Dynamically load Socket.io client
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.socket.io/4.5.4/socket.io.min.js';
+                    script.onload = () => {
+                        connectToSocket();
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    connectToSocket();
+                }
+            } catch (error) {
+                addVideoResult('Socket.io Connection Test', 'error', error.message);
+                updateVideoStats({ socketStatus: 'Error' });
+            }
+        }
+
+        function connectToSocket() {
+            try {
+                if (testSocket && testSocket.connected) {
+                    addVideoResult('Socket.io Connection Test', 'success', 'Already connected', {
+                        'Socket ID': testSocket.id,
+                        'Connected': 'Yes'
+                    });
+                    updateVideoStats({ socketStatus: 'Connected' });
+                    return;
+                }
+
+                testSocket = io('http://localhost:5000', {
+                    transports: ['websocket'],
+                    reconnection: true
+                });
+
+                testSocket.on('connect', () => {
+                    addVideoResult('Socket.io Connection Test', 'success', 'Connected successfully', {
+                        'Socket ID': testSocket.id,
+                        'Transport': testSocket.io.engine.transport.name
+                    });
+                    updateVideoStats({ socketStatus: 'Connected' });
+                });
+
+                testSocket.on('connect_error', (error) => {
+                    addVideoResult('Socket.io Connection Test', 'error', 'Connection failed: ' + error.message, {
+                        'Server': 'http://localhost:5000',
+                        'Error': error.message
+                    });
+                    updateVideoStats({ socketStatus: 'Error' });
+                });
+
+                testSocket.on('disconnect', (reason) => {
+                    addVideoResult('Socket.io Disconnected', 'error', 'Disconnected: ' + reason);
+                    updateVideoStats({ socketStatus: 'Disconnected' });
+                });
+
+                // Listen for video consultation events
+                testSocket.on('video:joined', (data) => {
+                    addVideoResult('Room Joined', 'success', 'Successfully joined room', {
+                        'Room ID': data.roomId,
+                        'Participants': data.participants.length
+                    });
+                    updateVideoStats({ 
+                        activeRooms: 1, 
+                        totalParticipants: data.participants.length 
+                    });
+                });
+
+                testSocket.on('video:userJoined', (data) => {
+                    addVideoResult('User Joined', 'success', `${data.userName} joined the room`, {
+                        'User': data.userName,
+                        'Role': data.role
+                    });
+                });
+
+                testSocket.on('video:chatMessage', (data) => {
+                    const currentCount = parseInt(document.getElementById('chat-messages').textContent) || 0;
+                    updateVideoStats({ chatMessages: currentCount + 1 });
+                    addVideoResult('Chat Message', 'success', data.message, {
+                        'From': data.userName,
+                        'Role': data.role
+                    });
+                });
+
+            } catch (error) {
+                addVideoResult('Socket.io Connection Test', 'error', error.message);
+                updateVideoStats({ socketStatus: 'Error' });
+            }
+        }
+
+        async function testWebRTC() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                
+                testStream = stream;
+                
+                const videoTracks = stream.getVideoTracks();
+                const audioTracks = stream.getAudioTracks();
+                
+                addVideoResult('WebRTC Media Test', 'success', 'Camera and microphone access granted', {
+                    'Video Devices': videoTracks.length,
+                    'Audio Devices': audioTracks.length,
+                    'Video Label': videoTracks[0]?.label || 'Unknown',
+                    'Audio Label': audioTracks[0]?.label || 'Unknown'
+                });
+
+                // Stop the test stream after 2 seconds
+                setTimeout(() => {
+                    stream.getTracks().forEach(track => track.stop());
+                }, 2000);
+
+            } catch (error) {
+                addVideoResult('WebRTC Media Test', 'error', 'Failed to access media devices: ' + error.message, {
+                    'Error Type': error.name,
+                    'Hint': 'Please grant camera and microphone permissions'
+                });
+            }
+        }
+
+        function joinTestRoom() {
+            if (!testSocket || !testSocket.connected) {
+                addVideoResult('Join Room', 'error', 'Socket not connected. Please test connection first.');
+                return;
+            }
+
+            const roomId = document.getElementById('room-id').value || 'test-room-001';
+            const userName = document.getElementById('user-name').value || 'Test User';
+            const userId = 'test-user-' + Math.random().toString(36).substr(2, 9);
+
+            testSocket.emit('video:joinRoom', {
+                roomId,
+                userId,
+                userName,
+                role: 'doctor',
+                consultationId: 'test-consultation-' + Date.now()
+            });
+
+            isInRoom = true;
+            
+            addVideoResult('Join Room Request', 'success', 'Join request sent', {
+                'Room ID': roomId,
+                'User Name': userName,
+                'User ID': userId
+            });
+        }
+
+        function leaveTestRoom() {
+            if (!testSocket || !testSocket.connected) {
+                addVideoResult('Leave Room', 'error', 'Socket not connected');
+                return;
+            }
+
+            if (!isInRoom) {
+                addVideoResult('Leave Room', 'error', 'Not in any room');
+                return;
+            }
+
+            const roomId = document.getElementById('room-id').value || 'test-room-001';
+            const userId = 'test-user';
+
+            testSocket.emit('video:leaveRoom', {
+                roomId,
+                userId
+            });
+
+            isInRoom = false;
+            updateVideoStats({ activeRooms: 0, totalParticipants: 0 });
+            
+            addVideoResult('Leave Room', 'success', 'Left room successfully', {
+                'Room ID': roomId
+            });
+        }
+
+        function testOffer() {
+            if (!testSocket || !testSocket.connected) {
+                addVideoResult('Send Offer', 'error', 'Socket not connected');
+                return;
+            }
+
+            const roomId = document.getElementById('room-id').value || 'test-room-001';
+            
+            const mockOffer = {
+                type: 'offer',
+                sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n...'
+            };
+
+            testSocket.emit('video:offer', {
+                roomId,
+                offer: mockOffer,
+                targetUserId: 'test-target-user'
+            });
+
+            addVideoResult('WebRTC Offer', 'success', 'Offer signal sent', {
+                'Room ID': roomId,
+                'Target': 'test-target-user',
+                'Type': 'offer'
+            });
+        }
+
+        function testAnswer() {
+            if (!testSocket || !testSocket.connected) {
+                addVideoResult('Send Answer', 'error', 'Socket not connected');
+                return;
+            }
+
+            const roomId = document.getElementById('room-id').value || 'test-room-001';
+            
+            const mockAnswer = {
+                type: 'answer',
+                sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n...'
+            };
+
+            testSocket.emit('video:answer', {
+                roomId,
+                answer: mockAnswer,
+                targetSocketId: 'test-socket-id'
+            });
+
+            addVideoResult('WebRTC Answer', 'success', 'Answer signal sent', {
+                'Room ID': roomId,
+                'Target Socket': 'test-socket-id',
+                'Type': 'answer'
+            });
+        }
+
+        function testToggleAudio() {
+            if (!testSocket || !testSocket.connected) {
+                addVideoResult('Toggle Audio', 'error', 'Socket not connected');
+                return;
+            }
+
+            audioEnabled = !audioEnabled;
+            const roomId = document.getElementById('room-id').value || 'test-room-001';
+
+            testSocket.emit('video:toggleAudio', {
+                roomId,
+                userId: 'test-user',
+                audioEnabled
+            });
+
+            addVideoResult('Toggle Audio', 'success', `Audio ${audioEnabled ? 'enabled' : 'disabled'}`, {
+                'Room ID': roomId,
+                'Audio Status': audioEnabled ? 'Enabled' : 'Disabled'
+            });
+        }
+
+        function testToggleVideo() {
+            if (!testSocket || !testSocket.connected) {
+                addVideoResult('Toggle Video', 'error', 'Socket not connected');
+                return;
+            }
+
+            videoEnabled = !videoEnabled;
+            const roomId = document.getElementById('room-id').value || 'test-room-001';
+
+            testSocket.emit('video:toggleVideo', {
+                roomId,
+                userId: 'test-user',
+                videoEnabled
+            });
+
+            addVideoResult('Toggle Video', 'success', `Video ${videoEnabled ? 'enabled' : 'disabled'}`, {
+                'Room ID': roomId,
+                'Video Status': videoEnabled ? 'Enabled' : 'Disabled'
+            });
+        }
+
+        function testScreenShare() {
+            if (!testSocket || !testSocket.connected) {
+                addVideoResult('Screen Share', 'error', 'Socket not connected');
+                return;
+            }
+
+            const roomId = document.getElementById('room-id').value || 'test-room-001';
+
+            testSocket.emit('video:startScreenShare', {
+                roomId,
+                userId: 'test-user'
+            });
+
+            addVideoResult('Screen Share', 'success', 'Screen sharing started', {
+                'Room ID': roomId,
+                'Status': 'Sharing'
+            });
+
+            // Simulate stopping after 3 seconds
+            setTimeout(() => {
+                testSocket.emit('video:stopScreenShare', {
+                    roomId,
+                    userId: 'test-user'
+                });
+                addVideoResult('Screen Share', 'success', 'Screen sharing stopped', {
+                    'Room ID': roomId,
+                    'Status': 'Stopped'
+                });
+            }, 3000);
+        }
+
+        function testChatMessage() {
+            if (!testSocket || !testSocket.connected) {
+                addVideoResult('Send Chat', 'error', 'Socket not connected');
+                return;
+            }
+
+            const roomId = document.getElementById('room-id').value || 'test-room-001';
+            const message = 'This is a test message from the testing dashboard at ' + new Date().toLocaleTimeString();
+
+            testSocket.emit('video:chatMessage', {
+                roomId,
+                message
+            });
+
+            addVideoResult('Chat Message', 'success', 'Message sent', {
+                'Room ID': roomId,
+                'Message': message
+            });
+        }
+
+        function updateVideoStats(stats) {
+            if (stats.activeRooms !== undefined) {
+                document.getElementById('active-rooms').textContent = stats.activeRooms;
+            }
+            if (stats.totalParticipants !== undefined) {
+                document.getElementById('total-participants').textContent = stats.totalParticipants;
+            }
+            if (stats.socketStatus !== undefined) {
+                const statusEl = document.getElementById('socket-status');
+                statusEl.textContent = stats.socketStatus;
+                statusEl.style.color = stats.socketStatus === 'Connected' ? 'var(--success)' : 
+                                      stats.socketStatus === 'Error' ? 'var(--danger)' : 'var(--text-muted)';
+            }
+            if (stats.chatMessages !== undefined) {
+                document.getElementById('chat-messages').textContent = stats.chatMessages;
+            }
+        }
+
         // Initialize on load
         window.addEventListener('load', () => {
             // Tests will only run when user clicks "Run All Tests" button
             console.log('Dashboard ready. Click "Run All Tests" to start testing.');
+            
+            // Initialize video stats
+            updateVideoStats({
+                activeRooms: 0,
+                totalParticipants: 0,
+                socketStatus: 'Disconnected',
+                chatMessages: 0
+            });
         });
     </script>
 </body>

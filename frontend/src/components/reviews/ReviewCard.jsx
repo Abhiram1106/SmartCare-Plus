@@ -101,9 +101,6 @@ const ReviewCard = ({
       }
     });
     setShowConfirmDialog(true);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const formatDate = (date) => {

@@ -4,6 +4,7 @@ const { auth } = require('../middleware/auth');
 const ChatMessage = require('../models/ChatMessage');
 const User = require('../models/User');
 const Appointment = require('../models/Appointment');
+const mongoose = require('mongoose');
 
 // Helper function to check if users have appointments together
 const checkAppointmentRelation = async (userId1, userId2) => {
@@ -147,12 +148,17 @@ router.put('/mark-all-read/:userId', auth, async (req, res) => {
 // @access  Private
 router.get('/conversations', auth, async (req, res) => {
   try {
+    // Convert userId to ObjectId for proper comparison in aggregation
+    const userObjectId = new mongoose.Types.ObjectId(req.userId);
+    
+    console.log('Getting conversations for userId:', req.userId, 'as ObjectId:', userObjectId);
+    
     const conversations = await ChatMessage.aggregate([
       {
         $match: {
           $or: [
-            { senderId: req.userId },
-            { receiverId: req.userId }
+            { senderId: userObjectId },
+            { receiverId: userObjectId }
           ]
         }
       },
@@ -163,7 +169,7 @@ router.get('/conversations', auth, async (req, res) => {
         $group: {
           _id: {
             $cond: [
-              { $eq: ['$senderId', req.userId] },
+              { $eq: ['$senderId', userObjectId] },
               '$receiverId',
               '$senderId'
             ]
@@ -173,7 +179,7 @@ router.get('/conversations', auth, async (req, res) => {
           otherUserName: {
             $first: {
               $cond: [
-                { $eq: ['$senderId', req.userId] },
+                { $eq: ['$senderId', userObjectId] },
                 '$receiverName',
                 '$senderName'
               ]
@@ -186,14 +192,19 @@ router.get('/conversations', auth, async (req, res) => {
       }
     ]);
     
+    console.log('Found', conversations.length, 'conversations from aggregation');
+    
     // Filter conversations to only include users with appointment relationships
     const validConversations = [];
     for (const conversation of conversations) {
       const hasAppointment = await checkAppointmentRelation(req.userId, conversation._id);
+      console.log('Checking appointment for conversation with:', conversation._id, '- has appointment:', hasAppointment);
       if (hasAppointment) {
         validConversations.push(conversation);
       }
     }
+    
+    console.log('Returning', validConversations.length, 'valid conversations');
     
     res.json(validConversations);
   } catch (error) {
